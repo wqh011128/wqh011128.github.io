@@ -1,0 +1,35 @@
+title: Qihang Wu
+email: qihang@example.com
+description: >- # this means to ignore newlines until "baseurl:"
+  Training and inference framework engineer. Research on domain adaptation for semantic segmentation and efficient attention mechanisms.
+baseurl: "" # the subpath of your site, e.g. /blog
+url: "https://wqh011128.github.io" # the base hostname & protocol for your site
+twitter_username: jekyllrb
+github_username:  wqh011128
+
+# Build settings
+theme: minima
+plugins:
+  - jekyll-feed
+
+# Exclude from processing.
+# The following items will not be processed, by default.
+# Any item listed under the `exclude:` key here will be automatically added to
+# the internal "default list".
+#
+# Excluded items can be processed by explicitly listing the directories or
+# their entries' file path in the `include:` list.
+#
+# exclude:
+#   - .sass-cache/
+#   - .jekyll-cache/
+#   - gemfiles/
+#   - Gemfile
+#   - Gemfile.lock
+#   - vendor/bundle/
+#   - vendor/cache/
+#   - vendor/gems/
+#   - vendor/ruby/
+
+include:
+  - _pages

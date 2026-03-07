@@ -1,3 +1,7 @@
+---
+layout: default
+---
+
 <!doctype html>
 <html lang="en">
   <head>
@@ -32,7 +36,6 @@
           <a class="active" href="#about">about</a>
           <a href="#posts">blog</a>
           <a href="#publications">publications</a>
-          <a href="#talks">talks</a>
           <a href="#contact">cv</a>
         </nav>
       </header>
@@ -53,17 +56,20 @@
 
           <div class="feature-links" aria-label="Selected links">
             <a href="#publications">
-              <strong>Flash Linear Attention</strong>
-              <span>Efficient attention implementations and systems work.</span>
+              <strong>CroPe</strong>
+              <span>CroPe: Cross-Modal Semantic Compensation
+Adaptation for All Adverse Scene Understanding.</span>
             </a>
-            <a href="#talks">
-              <strong>ASAP Seminar</strong>
-              <span>Advances in sequence modeling from algorithmic perspectives.</span>
+            <a href="#publications">
+              <strong>UCDS</strong>
+              <span>Unlocking Cross-Domain Synergies for Domain
+Adaptive Semantic Segmentation.</span>
             </a>
             <a href="#posts">
-              <strong>Engineering Notes</strong>
-              <span>Writing on workflows, interfaces, and maintainable frontend systems.</span>
+              <strong>Linear Attention</strong>
+              <span>Review the development of linear attention and study its hardware-efficient implementation.</span>
             </a>
+           
           </div>
         </div>
 
@@ -82,18 +88,12 @@
       <section class="content-section" id="posts">
         <h2>latest posts</h2>
         <div class="list-table">
-          <a class="list-row" href="#posts">
-            <span class="list-date">Mar 3, 2026</span>
-            <span class="list-title">Designing calmer landing page motion without losing personality</span>
+          {% for post in site.posts limit:3 %}
+          <a class="list-row" href="{{ post.url }}">
+            <span class="list-date">{{ post.date | date: "%b %d, %Y" }}</span>
+            <span class="list-title">{{ post.title }}</span>
           </a>
-          <a class="list-row" href="#posts">
-            <span class="list-date">Jan 12, 2026</span>
-            <span class="list-title">How I keep frontend code maintainable in fast-moving projects</span>
-          </a>
-          <a class="list-row" href="#posts">
-            <span class="list-date">Nov 21, 2025</span>
-            <span class="list-title">Shipping personal tools with a product mindset</span>
-          </a>
+          {% endfor %}
         </div>
       </section>
 
@@ -112,13 +112,6 @@
             <p>
               Qihang Wu, Collaborators. Research on robust segmentation transfer under
               cross-domain shifts and limited target supervision.
-            </p>
-          </article>
-          <article class="publication-item" id="talks">
-            <h3>Talks and Seminar Notes on Sequence Modeling</h3>
-            <p>
-              A curated set of talks, reading notes, and implementation observations
-              around transformer efficiency and model systems.
             </p>
           </article>
         </div>
