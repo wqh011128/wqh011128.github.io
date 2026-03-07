@@ -1,4 +1,4 @@
-const quote = "Code, create, and never stop learning.";
+const quote = "Lose yourself to find yourself";
 const intro = document.getElementById("intro");
 const quoteEl = document.getElementById("quote");
 const home = document.getElementById("home");
@@ -9,7 +9,7 @@ function typeQuote() {
   if (index <= quote.length) {
     quoteEl.textContent = quote.slice(0, index);
     index += 1;
-    setTimeout(typeQuote, 55);
+    setTimeout(typeQuote, 70);
     return;
   }
 
@@ -18,9 +18,9 @@ function typeQuote() {
     home.classList.remove("hidden");
     home.classList.add("revealed");
     home.setAttribute("aria-hidden", "false");
-  }, 850);
+  }, 1200);
 }
 
 window.addEventListener("load", () => {
-  setTimeout(typeQuote, 500);
+  setTimeout(typeQuote, 400);
 });
