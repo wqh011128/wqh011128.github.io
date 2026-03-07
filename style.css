@@ -6,7 +6,7 @@
   --intro-text: rgba(0, 0, 0, 0.66);
   --line: rgba(0, 0, 0, 0.1);
   --line-soft: rgba(0, 0, 0, 0.07);
-  --accent: #d51fc4;
+  --accent: #0ea5e9;
   --shadow: 0 24px 60px rgba(0, 0, 0, 0.08);
 }
 
@@ -308,7 +308,7 @@ main.revealed {
   display: grid;
   place-items: center;
   background:
-    linear-gradient(135deg, rgba(255, 220, 232, 0.65) 0%, rgba(255, 255, 255, 0.86) 45%, rgba(221, 236, 255, 0.76) 100%);
+    linear-gradient(135deg, rgba(157, 0, 193, 0.918) 0%, rgba(255, 255, 255, 0.86) 45%, rgba(221, 236, 255, 0.76) 100%);
 }
 
 .portrait-photo img {
@@ -374,6 +374,59 @@ main.revealed {
   font-size: 0.82rem;
   letter-spacing: 0.04em;
   color: var(--text);
+}
+
+.publication-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.publication-venue {
+  display: inline-block;
+  background-color: var(--accent);
+  color: white;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  width: fit-content;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.publication-header h3 {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 500;
+  color: var(--text);
+  flex: 1;
+}
+
+.publication-buttons {
+  display: flex;
+  gap: 0.8rem;
+  margin-top: 0.75rem;
+}
+
+.pub-button {
+  display: inline-block;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid var(--text);
+  border-radius: 2px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text);
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.pub-button:hover {
+  background-color: var(--accent);
+  border-color: var(--accent);
+  color: white;
 }
 
 .footer-band {

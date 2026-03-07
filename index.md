@@ -1,7 +1,3 @@
----
-layout: default
----
-
 <!doctype html>
 <html lang="en">
   <head>
@@ -101,18 +97,24 @@ Adaptive Semantic Segmentation.</span>
         <h2>selected publications</h2>
         <div class="publication-list">
           <article class="publication-item">
-            <h3>Scaling Efficient Attention for Practical Training Systems</h3>
-            <p>
-              Qihang Wu, Collaborators. A systems-oriented study of efficient attention
-              kernels for modern large-model training and inference.
-            </p>
+            <div class="publication-header">
+              <span class="publication-venue">NeurIPS 2025</span>
+              <h3>CroPe: Cross-Modal Semantic Compensation Adaptation for All Adverse Scene Understanding</h3>
+            </div>
+            <div class="publication-buttons">
+              <a href="https://ieeexplore.ieee.org/document/11313775" class="pub-button">PAPER</a>
+              <a href="https://github.com/wqh011128/UCDS" class="pub-button">CODE</a>
+            </div>
           </article>
           <article class="publication-item">
-            <h3>Domain Adaptation for Semantic Segmentation in Real-World Scenes</h3>
-            <p>
-              Qihang Wu, Collaborators. Research on robust segmentation transfer under
-              cross-domain shifts and limited target supervision.
-            </p>
+            <div class="publication-header">
+              <span class="publication-venue">IEEE TIP 2025</span>
+              <h3>UCDS: Unlocking Cross-Domain Synergies for Domain Adaptive Semantic Segmentation</h3>
+            </div>
+            <div class="publication-buttons">
+              <a href="https://openreview.net/pdf?id=38n8pFvldK" class="pub-button">PAPER</a>
+              <a href="https://github.com/wqh011128/CroPe" class="pub-button">CODE</a>
+            </div>
           </article>
         </div>
       </section>
