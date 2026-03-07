@@ -345,8 +345,8 @@ main.revealed {
 .list-row,
 .publication-item {
   display: grid;
-  grid-template-columns: 160px minmax(0, 1fr);
-  gap: 34px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
   align-items: start;
   padding: 0.95rem 0;
 }
@@ -366,14 +366,6 @@ main.revealed {
   margin: 0.35rem 0 0;
   max-width: 68ch;
   color: var(--text-faint);
-}
-
-.publication-item::before {
-  content: "paper";
-  font-family: "JetBrains Mono", monospace;
-  font-size: 0.82rem;
-  letter-spacing: 0.04em;
-  color: var(--text);
 }
 
 .publication-header {
