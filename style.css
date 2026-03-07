@@ -1,17 +1,21 @@
 :root {
-  --bg: #090d18;
-  --bg-soft: #111a2f;
-  --card: rgba(17, 26, 47, 0.82);
-  --border: rgba(118, 148, 255, 0.25);
-  --text: #e6ecff;
-  --muted: #9fb0e5;
-  --accent: #7ca3ff;
-  --accent-2: #47d4ff;
-  --shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+  --bg: #ffffff;
+  --bg-soft: #f8f9fa;
+  --card: rgba(255, 255, 255, 0.9);
+  --border: rgba(0, 0, 0, 0.1);
+  --text: #000000;
+  --muted: #6c757d;
+  --accent: #dc3545;
+  --accent-2: #ff6b7d;
+  --shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
 }
 
 * {
   box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
@@ -19,21 +23,34 @@ body {
   min-height: 100vh;
   font-family: "Inter", system-ui, -apple-system, sans-serif;
   color: var(--text);
-  background: radial-gradient(circle at 15% -10%, #293d73 0%, transparent 45%),
-    radial-gradient(circle at 85% 0%, #183f70 0%, transparent 38%), var(--bg);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(255, 0, 0, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 100% 0%, rgba(255, 0, 0, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 0% 100%, rgba(255, 0, 0, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 100% 100%, rgba(255, 0, 0, 0.05) 0%, transparent 50%),
+    var(--bg);
   line-height: 1.6;
+  overflow-x: hidden;
 }
 
+.hidden {
+  display: none;
+}
+
+/* 开场动画页 */
 #intro {
   position: fixed;
   inset: 0;
-  display: grid;
-  place-content: center;
-  gap: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
   text-align: center;
-  background: linear-gradient(180deg, #05070f 0%, #0b1222 100%);
-  z-index: 20;
-  transition: opacity 800ms ease, visibility 800ms ease;
+  background:
+    radial-gradient(circle at center, rgba(255, 0, 0, 0.08), transparent 30%),
+    linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
+  z-index: 9999;
+  transition: opacity 900ms ease, visibility 900ms ease;
 }
 
 #intro.fade-out {
@@ -41,38 +58,25 @@ body {
   visibility: hidden;
 }
 
-.terminal-label {
-  margin: 0;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: var(--muted);
-  font-size: 0.78rem;
-  font-family: "JetBrains Mono", monospace;
-}
-
 #quote {
   margin: 0;
-  min-height: 2.8rem;
-  font-size: clamp(1.2rem, 3vw, 2rem);
+  font-size: clamp(1.6rem, 4vw, 3.2rem);
   font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text);
   font-family: "JetBrains Mono", monospace;
-  color: var(--accent-2);
+  min-height: 1.4em;
 }
 
 #quote::after {
   content: "";
   display: inline-block;
-  width: 0.62ch;
-  height: 1.05em;
-  margin-left: 4px;
+  width: 0.08em;
+  height: 1em;
+  margin-left: 8px;
   background: var(--accent-2);
   vertical-align: -0.08em;
-  animation: blink 1s steps(1) infinite;
-}
-
-.hint {
-  margin: 0;
-  color: var(--muted);
+  animation: blink 0.9s steps(1) infinite;
 }
 
 @keyframes blink {
@@ -81,12 +85,33 @@ body {
   }
 }
 
+/* 主体内容 */
 main {
   width: min(920px, 92vw);
   margin: 0 auto;
   padding: 72px 0 60px;
   display: grid;
   gap: 24px;
+}
+
+main.hidden {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+main.revealed {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 800ms ease, transform 800ms ease;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(6px);
 }
 
 .nav-card {
@@ -104,32 +129,13 @@ main {
   padding: 6px 10px;
   border-radius: 8px;
   border: 1px solid transparent;
+  transition: all 0.25s ease;
 }
 
 .nav-card a:hover {
   color: var(--text);
   border-color: rgba(124, 163, 255, 0.35);
   background: rgba(124, 163, 255, 0.1);
-}
-
-main.hidden {
-  opacity: 0;
-  transform: translateY(16px);
-}
-
-main.revealed {
-  opacity: 1;
-  transform: translateY(0);
-  transition: opacity 700ms ease, transform 700ms ease;
-}
-
-.card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  padding: 24px;
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(6px);
 }
 
 .hero h1 {
@@ -220,5 +226,10 @@ li span {
 
   main {
     padding-top: 56px;
+  }
+
+  #quote {
+    font-size: 1.5rem;
+    line-height: 1.5;
   }
 }
