@@ -2,28 +2,29 @@ const quote = "Know the end, value the journey.\nUnknown end, value the end.\nNo
 const intro = document.getElementById("intro");
 const quoteEl = document.getElementById("quote");
 const home = document.getElementById("home");
-const CHAR_ANIMATION_MS = 900;
+const CHAR_ANIMATION_MS = 860;
 const INTRO_START_DELAY_MS = 220;
 const INTRO_HOLD_MS = 720;
 
-function createWord(word, wordIndex, state) {
+function createWord(word, wordIndex, lineIndex, state) {
   const wordSpan = document.createElement("span");
   wordSpan.className = "quote-word";
-  wordSpan.style.setProperty("--word-delay", `${wordIndex * 160}ms`);
+  wordSpan.style.setProperty("--word-delay", `${wordIndex * 110}ms`);
 
   [...word].forEach((char, letterIndex) => {
     const charSpan = document.createElement("span");
     const drift = (letterIndex % 3) * 16;
-    const wave = Math.sin((state.charIndex + 1) * 0.9) * 10;
-    const wordPause = wordIndex * 110;
-    const letterDelay = Math.max(0, state.charIndex * 28 + drift + wave + wordPause);
+    const wave = Math.sin((state.lineCharIndex + 1) * 0.9) * 10;
+    const wordPause = wordIndex * 84;
+    const lineOffset = lineIndex * 36;
+    const letterDelay = Math.max(0, state.lineCharIndex * 24 + drift + wave + wordPause + lineOffset);
 
     charSpan.className = "quote-char";
     charSpan.textContent = char;
     charSpan.style.setProperty("--char-delay", `${letterDelay}ms`);
     wordSpan.appendChild(charSpan);
     state.maxDelay = Math.max(state.maxDelay, letterDelay);
-    state.charIndex += 1;
+    state.lineCharIndex += 1;
   });
 
   return wordSpan;
@@ -32,19 +33,17 @@ function createWord(word, wordIndex, state) {
 function buildQuote() {
   const lines = quote.split("\n");
   const fragment = document.createDocumentFragment();
-  const state = {
-    charIndex: 0,
-    maxDelay: 0,
-  };
-  let wordIndex = 0;
+  const state = { maxDelay: 0 };
 
   lines.forEach((line, lineIndex) => {
     const lineSpan = document.createElement("span");
     lineSpan.className = "quote-line";
     const words = line.trim().split(/\s+/).filter(Boolean);
+    let wordIndex = 0;
+    state.lineCharIndex = 0;
 
     words.forEach((word, indexInLine) => {
-      lineSpan.appendChild(createWord(word, wordIndex, state));
+      lineSpan.appendChild(createWord(word, wordIndex, lineIndex, state));
       wordIndex += 1;
 
       if (indexInLine < words.length - 1) {
