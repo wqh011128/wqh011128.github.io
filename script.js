@@ -1,4 +1,4 @@
-const quote = "Lose yourself to find yourself";
+const quote = "Know the end, value the journey.\nUnknown end, value the end.\nNo end in mind, value the now.";
 const intro = document.getElementById("intro");
 const quoteEl = document.getElementById("quote");
 const home = document.getElementById("home");
@@ -11,12 +11,14 @@ function buildQuote() {
   words.forEach((word, wordIndex) => {
     const wordSpan = document.createElement("span");
     wordSpan.className = "quote-word";
+    wordSpan.style.setProperty("--word-delay", `${wordIndex * 160}ms`);
 
     [...word].forEach((char, letterIndex) => {
       const charSpan = document.createElement("span");
-      const drift = (letterIndex % 2) * 18;
-      const wordPause = wordIndex * 120;
-      const letterDelay = charIndex * 34 + drift + wordPause;
+      const drift = (letterIndex % 3) * 16;
+      const wave = Math.sin((charIndex + 1) * 0.9) * 10;
+      const wordPause = wordIndex * 110;
+      const letterDelay = Math.max(0, charIndex * 28 + drift + wave + wordPause);
 
       charSpan.className = "quote-char";
       charSpan.textContent = char;
@@ -47,7 +49,7 @@ function revealHome() {
       home.classList.add("revealed");
       home.setAttribute("aria-hidden", "false");
     });
-  }, 1550);
+  }, 1850);
 }
 
 window.addEventListener("load", () => {

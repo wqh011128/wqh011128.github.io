@@ -3,83 +3,160 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Coder Portfolio</title>
+    <title>Qihang Wu</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <!-- 开场动画 -->
     <div id="intro" aria-live="polite">
-      <h1 id="quote"></h1>
+      <div class="intro-shell">
+        <p class="intro-kicker">portfolio</p>
+        <h1 id="quote"></h1>
+      </div>
     </div>
 
-    <!-- 主页面 -->
     <main id="home" class="hidden" aria-hidden="true">
-      <nav class="card nav-card" aria-label="Primary navigation">
-        <a href="#about">About</a>
-        <a href="#projects">Projects</a>
-        <a href="#blog">Blog</a>
-      </nav>
-
-      <header class="hero card">
-        <p class="tag">&lt;developer /&gt;</p>
-        <h1>Hi, I'm Qihang.</h1>
-        <p class="subtitle">
-          I build clean, reliable, and delightful digital experiences with code.
-        </p>
+      <header class="topbar">
+        <div class="topbar-links social-links" aria-label="Social links">
+          <a href="mailto:qihang@example.com">mail</a>
+          <a href="#projects">work</a>
+          <a href="#writing">writing</a>
+          <a href="#contact">contact</a>
+        </div>
+        <nav class="topbar-links site-nav" aria-label="Primary navigation">
+          <a class="active" href="#about">about</a>
+          <a href="#posts">posts</a>
+          <a href="#projects">projects</a>
+          <a href="#writing">notes</a>
+          <a href="#contact">cv</a>
+        </nav>
       </header>
 
-      <section class="card" id="about">
-        <h2>Self Introduction</h2>
-        <p>
-          I'm a software engineer who loves turning ideas into practical products.
-          I focus on web development, automation, and writing maintainable code.
-          Outside coding, I keep learning by building side projects and sharing what
-          I learn.
-        </p>
+      <section class="hero-layout" id="about">
+        <div class="hero-copy">
+          <p class="eyebrow">Software engineer / builder / writer</p>
+          <h1 class="hero-title">
+            <span>Qihang</span>
+            <span>Wu</span>
+          </h1>
+          <p class="hero-lead">
+            I build practical web products with a clean engineering mindset. My work
+            focuses on frontend systems, automation, and shaping interfaces that feel
+            calm, intentional, and reliable.
+          </p>
+          <p class="hero-body">
+            I like turning vague ideas into shippable software, refining product
+            details, and keeping codebases readable as they grow. Outside daily
+            development, I write notes about workflows, UI craft, and building better
+            tools.
+          </p>
+
+          <div class="hero-highlights" aria-label="Selected highlights">
+            <a href="#projects">
+              <strong>Dev Dashboard</strong>
+              <span>Metrics and deploy visibility for small teams</span>
+            </a>
+            <a href="#writing">
+              <strong>Workflow Notes</strong>
+              <span>Short essays on shipping side projects with less friction</span>
+            </a>
+            <a href="#contact">
+              <strong>Currently open</strong>
+              <span>Frontend, product engineering, and interface system work</span>
+            </a>
+          </div>
+        </div>
+
+        <aside class="hero-visual" aria-label="Profile panel">
+          <div class="portrait-card">
+            <div class="portrait-glow"></div>
+            <div class="portrait-frame">
+              <p class="portrait-label">based in Shanghai</p>
+              <div class="portrait-art" aria-hidden="true">
+                <span class="portrait-ring portrait-ring-a"></span>
+                <span class="portrait-ring portrait-ring-b"></span>
+                <span class="portrait-ring portrait-ring-c"></span>
+                <span class="portrait-monogram">WQ</span>
+              </div>
+            </div>
+          </div>
+        </aside>
       </section>
 
-      <section class="card" id="projects">
-        <h2>Projects</h2>
-        <div class="project-grid">
-          <article>
+      <section class="content-section" id="posts">
+        <h2>latest posts</h2>
+        <div class="list-table">
+          <a class="list-row" href="#writing">
+            <span class="list-date">Mar 2026</span>
+            <span class="list-title">Designing calmer landing page motion without losing personality</span>
+          </a>
+          <a class="list-row" href="#writing">
+            <span class="list-date">Jan 2026</span>
+            <span class="list-title">How I keep frontend code maintainable in fast-moving projects</span>
+          </a>
+          <a class="list-row" href="#writing">
+            <span class="list-date">Nov 2025</span>
+            <span class="list-title">Shipping personal tools with a product mindset</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="content-section" id="projects">
+        <h2>selected projects</h2>
+        <div class="project-list">
+          <article class="project-item">
             <h3>Dev Dashboard</h3>
             <p>
-              A dashboard that tracks development metrics and deploy status in one
-              place.
+              A monitoring surface that brings release status, issue flow, and
+              engineering metrics into one focused interface.
             </p>
           </article>
-          <article>
+          <article class="project-item">
             <h3>Snippet Vault</h3>
             <p>
-              A searchable personal code snippet manager with tags and sync.
+              A searchable snippet library for personal knowledge reuse, tagged by
+              stack, problem type, and implementation pattern.
             </p>
           </article>
-          <article>
+          <article class="project-item">
             <h3>Focus CLI</h3>
             <p>
-              A command-line productivity tool for deep-work sessions and logs.
+              A small command-line tool for structuring deep-work sessions, terminal
+              rituals, and daily review logs.
             </p>
           </article>
         </div>
       </section>
 
-      <section class="card" id="blog">
-        <h2>Blog</h2>
-        <ul>
-          <li><span>2026-01</span> Writing resilient frontend components</li>
-          <li><span>2025-11</span> Lessons from shipping side projects fast</li>
-          <li><span>2025-09</span> How I structure developer workflows</li>
-        </ul>
+      <section class="content-section" id="writing">
+        <h2>notes and writing</h2>
+        <div class="writing-grid">
+          <article>
+            <p class="writing-tag">frontend</p>
+            <h3>Writing resilient components</h3>
+            <p>Patterns for interfaces that survive iteration without becoming brittle.</p>
+          </article>
+          <article>
+            <p class="writing-tag">workflow</p>
+            <h3>Shipping side projects faster</h3>
+            <p>How I reduce ambiguity early so implementation gets simpler later.</p>
+          </article>
+          <article>
+            <p class="writing-tag">design systems</p>
+            <h3>Visual polish through restraint</h3>
+            <p>Small spacing, motion, and typography decisions that change perceived quality.</p>
+          </article>
+        </div>
       </section>
 
-      <footer class="card footer-card">
-        <p>© 2026 WQH · Built with HTML/CSS/JavaScript</p>
+      <footer class="footer-band" id="contact">
+        <p>Qihang Wu</p>
+        <p>Available for thoughtful frontend and product engineering work.</p>
       </footer>
     </main>
 
