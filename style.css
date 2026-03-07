@@ -1,8 +1,6 @@
 :root {
   --bg: #ffffff;
-  --bg-warm: #fff5f5;
-  --surface: rgba(255, 255, 255, 0.72);
-  --surface-strong: rgba(255, 255, 255, 0.88);
+  --surface: #ffffff;
   --line: rgba(17, 17, 17, 0.1);
   --line-soft: rgba(17, 17, 17, 0.06);
   --text: #111111;
@@ -25,10 +23,7 @@ body {
   min-height: 100vh;
   font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   color: var(--text);
-  background:
-    radial-gradient(circle at center, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.97) 24%, rgba(255, 247, 247, 0.94) 58%, rgba(255, 236, 238, 0.9) 100%),
-    radial-gradient(circle at 50% 16%, rgba(255, 204, 214, 0.18) 0%, transparent 40%),
-    linear-gradient(180deg, #ffffff 0%, var(--bg-warm) 100%);
+  background: var(--bg);
   line-height: 1.6;
   overflow-x: hidden;
 }
@@ -49,10 +44,7 @@ a {
   place-items: center;
   padding: 24px;
   text-align: center;
-  background:
-    radial-gradient(circle at center, rgba(255, 255, 255, 0.99) 0%, rgba(255, 252, 252, 0.96) 34%, rgba(255, 238, 241, 0.84) 100%),
-    radial-gradient(circle at 50% 28%, rgba(255, 189, 203, 0.18) 0%, transparent 42%),
-    linear-gradient(180deg, #ffffff 0%, #fff8f8 100%);
+  background: #ffffff;
   z-index: 9999;
   transition: opacity 900ms ease, visibility 900ms ease;
 }
@@ -64,7 +56,8 @@ a {
 
 .intro-shell {
   position: relative;
-  padding: 1.2rem 1.6rem;
+  width: min(1040px, calc(100vw - 48px));
+  padding: 1.2rem 1rem;
 }
 
 .intro-shell::before {
@@ -72,7 +65,7 @@ a {
   position: absolute;
   inset: auto 8% -10% 8%;
   height: 28px;
-  background: radial-gradient(circle, rgba(215, 57, 104, 0.18) 0%, transparent 72%);
+  background: radial-gradient(circle, rgba(17, 17, 17, 0.06) 0%, transparent 72%);
   filter: blur(14px);
   opacity: 0;
   transform: scaleX(0.7);
@@ -82,29 +75,19 @@ a {
   animation: intro-glow 1.8s ease-out forwards;
 }
 
-.intro-kicker {
-  margin: 0 0 0.7rem;
-  font-family: "JetBrains Mono", monospace;
-  font-size: 0.82rem;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  color: rgba(17, 17, 17, 0.42);
-  opacity: 0;
-  transform: translateY(10px);
-}
-
-#intro.quote-ready .intro-kicker {
-  animation: intro-kicker-in 780ms cubic-bezier(0.16, 1, 0.3, 1) 140ms forwards;
-}
-
 #quote {
   margin: 0;
-  font-size: clamp(2rem, 5vw, 4.3rem);
+  font-size: clamp(1.7rem, 4.4vw, 4rem);
   font-weight: 600;
   letter-spacing: -0.055em;
   color: var(--text);
-  min-height: 1.15em;
-  line-height: 1.05;
+  min-height: 3.4em;
+  line-height: 1.14;
+  white-space: normal;
+}
+
+.quote-line {
+  display: inline-block;
 }
 
 .quote-word {
@@ -193,13 +176,6 @@ a {
   }
 }
 
-@keyframes intro-kicker-in {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 @keyframes caret-fade {
   0%,
   100% {
@@ -276,14 +252,14 @@ main.revealed {
 
 .hero-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 360px);
-  gap: 56px;
+  grid-template-columns: minmax(0, 1.55fr) minmax(300px, 360px);
+  gap: 72px;
   align-items: start;
   padding: 56px 0 44px;
 }
 
 .hero-copy {
-  max-width: 760px;
+  max-width: 900px;
 }
 
 .eyebrow {
@@ -313,8 +289,8 @@ main.revealed {
 .hero-lead {
   margin: 1.7rem 0 0;
   font-size: clamp(1.22rem, 2vw, 1.58rem);
-  line-height: 1.55;
-  max-width: 15.5ch;
+  line-height: 1.48;
+  max-width: 27ch;
 }
 
 .hero-body {
@@ -364,7 +340,7 @@ main.revealed {
   position: absolute;
   inset: 10% 8% auto;
   height: 78%;
-  background: radial-gradient(circle at center, rgba(255, 188, 198, 0.28) 0%, transparent 68%);
+  background: radial-gradient(circle at center, rgba(17, 17, 17, 0.06) 0%, transparent 68%);
   filter: blur(26px);
 }
 
@@ -372,7 +348,7 @@ main.revealed {
   position: relative;
   border-radius: 28px;
   padding: 18px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 248, 249, 0.9) 100%);
+  background: #ffffff;
   border: 1px solid rgba(17, 17, 17, 0.08);
   box-shadow: var(--shadow);
   overflow: hidden;
@@ -394,16 +370,13 @@ main.revealed {
   place-items: center;
   border-radius: 22px;
   overflow: hidden;
-  background:
-    radial-gradient(circle at 30% 28%, rgba(255, 255, 255, 0.9) 0%, transparent 24%),
-    radial-gradient(circle at 72% 22%, rgba(255, 203, 212, 0.82) 0%, transparent 24%),
-    linear-gradient(145deg, #fffdfd 0%, #ffe7eb 52%, #ffd4dd 100%);
+  background: #ffffff;
 }
 
 .portrait-ring {
   position: absolute;
   border-radius: 999px;
-  border: 1px solid rgba(215, 57, 104, 0.18);
+  border: 1px solid rgba(215, 57, 104, 0.14);
 }
 
 .portrait-ring-a {
@@ -419,7 +392,7 @@ main.revealed {
 .portrait-ring-c {
   width: 34%;
   height: 34%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.72) 0%, transparent 80%);
+  background: radial-gradient(circle, rgba(215, 57, 104, 0.03) 0%, transparent 80%);
 }
 
 .portrait-monogram {
@@ -531,6 +504,11 @@ main.revealed {
     gap: 34px;
   }
 
+  .hero-copy,
+  .hero-lead {
+    max-width: none;
+  }
+
   .hero-highlights a {
     grid-template-columns: 1fr;
     gap: 4px;
@@ -593,7 +571,6 @@ main.revealed {
   main.revealed,
   #intro.quote-ready .quote-char,
   #intro.quote-ready .quote-word,
-  #intro.quote-ready .intro-kicker,
   #intro.quote-ready .intro-shell::before,
   #quote::after {
     animation: none;
@@ -601,8 +578,7 @@ main.revealed {
   }
 
   .quote-char,
-  .quote-word,
-  .intro-kicker {
+  .quote-word {
     opacity: 1;
     transform: none;
     filter: none;
