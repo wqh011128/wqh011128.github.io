@@ -1,7 +1,7 @@
 ---
 layout: post
-title: "KIMI LINEAR: AN EXPRESSIVE, EFFICIENT ATTENTION ARCHITECTURE"
-date: 2025-01-13
+title: "KIMI LINEAR、Delta Network总结"
+date: 2026-03-08
 categories:
   - blog
 ---
