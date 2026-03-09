@@ -21,11 +21,11 @@ layout: default
         <div class="topbar-links social-links" aria-label="Social links">
           <a href="mailto:wqh011128@163.com">mail</a>
           <a href="https://github.com/wqh011128" target="_blank" rel="noreferrer">github</a>
-          <a href="#posts">rss</a>
+          <a href="{{ '/feed.xml' | relative_url }}">rss</a>
         </div>
         <nav class="topbar-links site-nav" aria-label="Primary navigation">
           <a class="active" href="#about">about</a>
-          <a href="#posts">blog</a>
+          <a href="{{ '/blog.html' | relative_url }}">blog</a>
           <a href="#publications">publications</a>
           <a href="#contact">cv</a>
         </nav>
@@ -56,7 +56,7 @@ Adaptation for All Adverse Scene Understanding.</span>
               <span>Unlocking Cross-Domain Synergies for Domain
 Adaptive Semantic Segmentation.</span>
             </a>
-            <a href="#posts">
+            <a href="{{ '/blog.html' | relative_url }}">
               Linear Attention
               <span>Review the development of linear attention and study its hardware-efficient implementation.</span>
             </a>
@@ -78,13 +78,14 @@ Adaptive Semantic Segmentation.</span>
       <section class="content-section" id="posts">
         <h2>latest posts</h2>
         <div class="list-table">
-          {% for post in site.posts %}
+          {% for post in site.posts limit: 3 %}
           <a class="list-row" href="{{ post.url | relative_url }}">
             <span class="list-date">{{ post.date | date: "%b %d, %Y" }}</span>
             <span class="list-title">{{ post.title }}</span>
           </a>
           {% endfor %}
         </div>
+        <a class="section-link" href="{{ '/blog.html' | relative_url }}">Browse all markdown, PPT, and PDF resources</a>
       </section>
 
       <section class="content-section" id="publications">

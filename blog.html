@@ -1,0 +1,128 @@
+---
+layout: default
+title: Resources
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ page.title }} | {{ site.title }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{{ '/style.css' | relative_url }}" />
+  </head>
+  <body class="archive-page">
+    {% assign ppt_files = site.static_files | where_exp: "item", "item.extname == '.ppt' or item.extname == '.pptx'" %}
+    {% assign pdf_files = site.static_files | where_exp: "item", "item.extname == '.pdf'" %}
+    <main class="archive-shell">
+      <header class="topbar">
+        <div class="topbar-links social-links" aria-label="Social links">
+          <a href="mailto:wqh011128@163.com">mail</a>
+          <a href="https://github.com/wqh011128" target="_blank" rel="noreferrer">github</a>
+          <a href="{{ '/feed.xml' | relative_url }}">rss</a>
+        </div>
+        <nav class="topbar-links site-nav" aria-label="Primary navigation">
+          <a href="{{ '/' | relative_url }}">home</a>
+          <a class="active" href="{{ '/blog.html' | relative_url }}">blog</a>
+          <a href="#markdown-resources">markdown</a>
+          <a href="#document-resources">documents</a>
+        </nav>
+      </header>
+
+      <section class="archive-hero">
+        <div class="archive-copy">
+          <p class="eyebrow">Knowledge Base</p>
+          <h1>All posts and document assets in one place.</h1>
+          <p class="archive-summary">
+            This page groups content from the <code>_posts</code>, <code>ppt</code>, and
+            <code>pdf</code> directories so the homepage can stay focused on recent writing.
+          </p>
+        </div>
+
+        <div class="archive-stats" aria-label="Resource counts">
+          <article class="stat-card">
+            <span class="stat-value">{{ site.posts | size }}</span>
+            <span class="stat-label">Markdown posts</span>
+          </article>
+          <article class="stat-card">
+            <span class="stat-value">{{ ppt_files | size }}</span>
+            <span class="stat-label">PPT files</span>
+          </article>
+          <article class="stat-card">
+            <span class="stat-value">{{ pdf_files | size }}</span>
+            <span class="stat-label">PDF files</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="archive-section" id="markdown-resources">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">Category 01</p>
+            <h2>Markdown</h2>
+          </div>
+          <p class="section-note">Published posts generated from <code>_posts</code>.</p>
+        </div>
+
+        <div class="list-table archive-list">
+          {% for post in site.posts %}
+          <a class="list-row archive-row" href="{{ post.url | relative_url }}">
+            <span class="list-date">{{ post.date | date: "%b %d, %Y" }}</span>
+            <span class="list-title">{{ post.title }}</span>
+            <span class="row-tag">MD</span>
+          </a>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="archive-section" id="document-resources">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">Category 02</p>
+            <h2>Documents</h2>
+          </div>
+          <p class="section-note">Slides and papers exposed directly as static files.</p>
+        </div>
+
+        <div class="resource-columns">
+          <div class="resource-group">
+            <div class="resource-group-head">
+              <h3>PPT / PPTX</h3>
+              <span>{{ ppt_files | size }}</span>
+            </div>
+            <div class="resource-grid">
+              {% for file in ppt_files %}
+              <a class="resource-card" href="{{ file.path | relative_url }}">
+                <span class="resource-badge">PPT</span>
+                <strong>{{ file.basename | replace: "_", " " | replace: "-", " " }}</strong>
+                <span class="resource-meta">{{ file.name }}</span>
+              </a>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="resource-group">
+            <div class="resource-group-head">
+              <h3>PDF</h3>
+              <span>{{ pdf_files | size }}</span>
+            </div>
+            <div class="resource-grid">
+              {% for file in pdf_files %}
+              <a class="resource-card" href="{{ file.path | relative_url }}">
+                <span class="resource-badge">PDF</span>
+                <strong>{{ file.basename | replace: "_", " " | replace: "-", " " }}</strong>
+                <span class="resource-meta">{{ file.name }}</span>
+              </a>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

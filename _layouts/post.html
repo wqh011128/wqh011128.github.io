@@ -32,7 +32,7 @@
   <body class="post-page">
     <main class="post-shell">
       <header class="post-header">
-        <a class="post-back" href="{{ '/' | relative_url }}#posts">Back to home</a>
+        <a class="post-back" href="{{ '/blog.html' | relative_url }}">Back to blog</a>
         <p class="post-meta">
           <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: "%B %d, %Y" }}</time>
           {% if page.categories and page.categories != empty %}
