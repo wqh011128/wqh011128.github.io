@@ -28,6 +28,11 @@
       id="MathJax-script"
       src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
     ></script>
+    <script
+      defer
+      src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"
+    ></script>
+    <script defer src="{{ '/post.js' | relative_url }}"></script>
   </head>
   <body class="post-page">
     <main class="post-shell">
@@ -41,11 +46,33 @@
           {% endif %}
         </p>
         <h1>{{ page.title }}</h1>
+        <div class="post-stats" aria-label="Article stats">
+          <span class="post-stat">
+            <span class="post-stat-label">Type</span>
+            <span>Markdown Post</span>
+          </span>
+          <span class="post-stat" id="busuanzi_container_page_pv">
+            <span class="post-stat-label">Views</span>
+            <span><span id="busuanzi_value_page_pv"></span> reads</span>
+          </span>
+        </div>
       </header>
 
-      <article class="post-content">
-        {{ content }}
-      </article>
+      <div class="post-layout">
+        <article class="post-content" id="post-content">
+          {{ content }}
+        </article>
+
+        <aside class="post-sidebar" aria-label="Article outline">
+          <div class="post-outline" id="post-outline" hidden>
+            <div class="post-outline-head">
+              <p class="post-outline-kicker">On this page</p>
+              <strong>Table of contents</strong>
+            </div>
+            <nav class="post-outline-nav" id="post-outline-nav"></nav>
+          </div>
+        </aside>
+      </div>
     </main>
   </body>
 </html>
