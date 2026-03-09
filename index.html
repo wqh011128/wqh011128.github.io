@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Qihang Wu - AI Algorithm Engineer</title>
+<title>Qihang Wu - AI Systems Engineer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link
-  href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap"
+  href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;700&display=swap"
   rel="stylesheet"
 />
 <link rel="stylesheet" href="style.css" />
@@ -24,11 +24,10 @@
   </div>
   <div class="topbar-actions">
     <nav class="topbar-links site-nav" aria-label="Primary navigation">
-      <a class="active" href="#about">about</a>
-      <a href="#skills">skills</a>
-      <a href="#work">projects</a>
-      <a href="#experience">experience</a>
-      <a href="#publications">publications</a>
+      <a class="active" href="#about">home</a>
+      <a href="#lens">approach</a>
+      <a href="#work">work</a>
+      <a href="#publications">papers</a>
       <a href="blog.html">blog</a>
     </nav>
     <div class="topbar-links social-links" aria-label="Social links">
@@ -41,79 +40,65 @@
 
 <section class="hero-layout" id="about">
   <div class="hero-copy">
-    <p class="eyebrow">AI / Research Portfolio</p>
-    <h1 class="hero-title">
-      Building efficient training & inference systems for large language and vision models.
-    </h1>
-    <p class="hero-summary">
-      I’m Qihang Wu, an AI algorithm engineer focused on scalable training and deployment of LLMs and VLMs. My earlier research at
-      <a href="https://ahu-spvl.github.io/" target="_blank" rel="noreferrer">AHU‑SPVL</a>
-      explored domain adaptation for semantic segmentation; today I build systems that bridge cutting‑edge research with production needs.
-    </p>
-    <div class="hero-tags" aria-label="Focus areas">
-      <span>LLM/VLM systems</span>
-      <span>Efficient training</span>
-      <span>Inference & serving</span>
-      <span>Domain adaptation</span>
+    <p class="eyebrow">AI Systems / Research</p>
+    <h1 class="hero-title">Designing the systems layer for large language and vision models.</h1>
+    <div class="hero-summary-stack">
+      <p>I work on distributed training, inference efficiency, and the engineering decisions that make LLM and VLM research survive hardware constraints.</p>
+      <p>Earlier work at <a href="https://ahu-spvl.github.io/" target="_blank" rel="noreferrer">AHU-SPVL</a> focused on domain adaptation and adverse scene understanding.</p>
+      <p>This homepage is intentionally narrow: selected proof points here, deeper notes and resources in the archive.</p>
     </div>
     <div class="hero-actions">
-      <a class="primary-button" href="#publications">View publications</a>
-      <a class="secondary-button" href="blog.html">Explore writing</a>
+      <a class="primary-button" href="#work">Selected work</a>
+      <a class="secondary-button" href="blog.html">Open archive</a>
     </div>
   </div>
-  <aside class="hero-side" aria-label="Profile snapshot">
-    <article class="profile-card">
-      <div class="profile-card-head">
-        <div class="profile-avatar" aria-hidden="true">QW</div>
-        <div>
-          <p class="profile-label">Current focus</p>
-          <h2>Research‑informed engineering</h2>
+
+  <aside class="hero-side" aria-label="Site summary">
+    <article class="signal-panel">
+      <p class="profile-label">Site map</p>
+      <h2>Selected, not exhaustive.</h2>
+      <div class="signal-list">
+        <div class="signal-row">
+          <span class="signal-label">Current</span>
+          <p>LLM/VLM systems work around throughput, memory pressure, and deployment behavior.</p>
+        </div>
+        <div class="signal-row">
+          <span class="signal-label">Published</span>
+          <p>Two research anchors on robust scene understanding and cross-domain adaptation.</p>
+        </div>
+        <div class="signal-row">
+          <span class="signal-label">Archive</span>
+          <p>Posts, slides, and papers organized as a resource hub instead of spread across the homepage.</p>
         </div>
       </div>
-      <div class="profile-metrics">
-        <div>
-          <span class="metric-value">2</span>
-          <span class="metric-label">selected papers</span>
-        </div>
-        <div>
-          <span class="metric-value">4</span>
-          <span class="metric-label">focus areas</span>
-        </div>
-        <div>
-          <span class="metric-value">1</span>
-          <span class="metric-label">resource hub</span>
-        </div>
-      </div>
-      <div class="profile-list">
-        <p>Research: domain adaptation, multimodal learning.</p>
-        <p>Engineering: distributed training, inference systems, efficiency.</p>
-        <p>Writing: notes and resources on linear attention and model systems.</p>
-      </div>
+      <p class="signal-note">The homepage acts as a filter. The blog holds the full trail.</p>
     </article>
   </aside>
 </section>
 
-<!-- New Skills Section -->
-<section class="content-section" id="skills">
+<section class="content-section" id="lens">
   <div class="section-headline">
     <div>
-      <p class="section-kicker">Capabilities</p>
-      <h2>Skills & Expertise</h2>
+      <p class="section-kicker">Operating lens</p>
+      <h2>How I approach the work</h2>
     </div>
-    <p class="section-note">Core technologies and frameworks I work with</p>
+    <p class="section-note">A compact view of what I tend to optimize for when moving from paper to system.</p>
   </div>
-  <div class="project-grid">
-    <article class="project-card">
-      <h3>Programming Languages</h3>
-      <p>Python, C++, CUDA, Rust</p>
+  <div class="principles-grid">
+    <article class="principle-card">
+      <span class="principle-index">01</span>
+      <h3>Optimize under real constraints.</h3>
+      <p>Memory traffic, parallelism strategy, and serving behavior matter as much as model quality when the target is a usable system.</p>
     </article>
-    <article class="project-card">
-      <h3>Frameworks</h3>
-      <p>PyTorch, JAX/Flax, TensorFlow</p>
+    <article class="principle-card">
+      <span class="principle-index">02</span>
+      <h3>Turn research into concrete decisions.</h3>
+      <p>I value notes, experiments, and implementations that reduce the distance between a new idea and an engineering choice.</p>
     </article>
-    <article class="project-card">
-      <h3>Systems & Tools</h3>
-      <p>Distributed training, inference serving, optimization</p>
+    <article class="principle-card">
+      <span class="principle-index">03</span>
+      <h3>Prefer selection over inventory.</h3>
+      <p>The homepage keeps only the strongest signals. The broader trail of work lives in the archive where it can stay detailed.</p>
     </article>
   </div>
 </section>
@@ -122,27 +107,26 @@
   <div class="section-headline">
     <div>
       <p class="section-kicker">Selected work</p>
-      <h2>Projects and research themes</h2>
+      <h2>Work that best represents the profile</h2>
     </div>
-    <p class="section-note">A compact view of the projects that best represent my current profile.</p>
+    <p class="section-note">One ongoing systems thread and two published research anchors.</p>
   </div>
   <div class="project-grid">
     <article class="project-card featured">
-      <span class="card-tag">NeurIPS 2025</span>
-      <h3>CroPe</h3>
+      <span class="card-tag">Ongoing</span>
+      <h3>Model systems notes</h3>
       <p>
-        Cross‑modal semantic compensation for adverse scene understanding, with a focus on robust semantic segmentation under rain, snow, fog, and nighttime conditions.
+        A living body of writing on linear attention, multimodal model internals, JAX/TPU practice, and implementation details that matter once theory meets hardware.
       </p>
       <div class="card-links">
-        <a href="https://openreview.net/pdf?id=38n8pFvldK" target="_blank" rel="noreferrer">paper</a>
-        <a href="https://github.com/wqh011128/CroPe" target="_blank" rel="noreferrer">code</a>
+        <a href="blog.html">resource hub</a>
       </div>
     </article>
     <article class="project-card">
       <span class="card-tag">IEEE TIP 2025</span>
       <h3>UCDS</h3>
       <p>
-        A cross‑domain collaborative framework that improves pseudo‑label quality and feature discrimination for domain adaptive semantic segmentation.
+        A cross-domain collaborative framework for domain adaptive semantic segmentation, designed to improve pseudo-label quality and feature discrimination together.
       </p>
       <div class="card-links">
         <a href="https://ieeexplore.ieee.org/document/11313775" target="_blank" rel="noreferrer">paper</a>
@@ -150,65 +134,16 @@
       </div>
     </article>
     <article class="project-card">
-      <span class="card-tag">Writing</span>
-      <h3>Linear Attention Notes</h3>
+      <span class="card-tag">NeurIPS 2025</span>
+      <h3>CroPe</h3>
       <p>
-        A running collection of posts and resources on linear attention, hardware efficiency, and practical implementation details.
+        Cross-modal semantic compensation for adverse scene understanding, targeting robust semantic segmentation across rain, snow, fog, and nighttime conditions.
       </p>
       <div class="card-links">
-        <a href="blog.html">browse resources</a>
+        <a href="https://openreview.net/pdf?id=38n8pFvldK" target="_blank" rel="noreferrer">paper</a>
+        <a href="https://github.com/wqh011128/CroPe" target="_blank" rel="noreferrer">code</a>
       </div>
     </article>
-  </div>
-</section>
-
-<!-- New Experience Section -->
-<section class="content-section" id="experience">
-  <div class="section-headline">
-    <div>
-      <p class="section-kicker">Career</p>
-      <h2>Experience</h2>
-    </div>
-    <p class="section-note">Key roles and research projects</p>
-  </div>
-  <div class="list-table">
-    <div class="list-row">
-      <span class="list-date">2025–Present</span>
-      <span class="list-title">AI Systems Engineer</span>
-      <span class="row-tag">engineering</span>
-    </div>
-    <div class="list-row">
-      <span class="list-date">2023–2025</span>
-      <span class="list-title">Research Engineer, AHU‑SPVL</span>
-      <span class="row-tag">research</span>
-    </div>
-  </div>
-</section>
-
-<section class="content-section" id="posts">
-  <div class="section-headline">
-    <div>
-      <p class="section-kicker">Latest writing</p>
-      <h2>Recent posts</h2>
-    </div>
-    <a class="section-link" href="blog.html">See all resources</a>
-  </div>
-  <div class="list-table">
-    <div class="list-row">
-      <span class="list-date">Mar 15, 2025</span>
-      <span class="list-title">Understanding Linear Attention</span>
-      <span class="row-tag">post</span>
-    </div>
-    <div class="list-row">
-      <span class="list-date">Feb 01, 2025</span>
-      <span class="list-title">System design for efficient LLM serving</span>
-      <span class="row-tag">post</span>
-    </div>
-    <div class="list-row">
-      <span class="list-date">Jan 10, 2025</span>
-      <span class="list-title">Domain adaptation in adverse conditions</span>
-      <span class="row-tag">post</span>
-    </div>
   </div>
 </section>
 
@@ -218,14 +153,14 @@
       <p class="section-kicker">Publications</p>
       <h2>Selected papers</h2>
     </div>
-    <p class="section-note">Research spanning adverse scene understanding and domain adaptation.</p>
+    <p class="section-note">Published work in robust scene understanding and domain adaptation that still informs the systems work.</p>
   </div>
   <div class="publication-list">
     <article class="publication-item">
       <div class="publication-header">
         <span class="publication-venue">NeurIPS 2025</span>
         <div>
-          <h3>CroPe: Cross‑Modal Semantic Compensation Adaptation for All Adverse Scene Understanding</h3>
+          <h3>CroPe: Cross-Modal Semantic Compensation Adaptation for All Adverse Scene Understanding</h3>
           <p class="publication-authors">Qin Xu, Qihang Wu, Hongtao Lu, Xiaoxia Cheng, Bo Jiang</p>
         </div>
       </div>
@@ -238,7 +173,7 @@
       <div class="publication-header">
         <span class="publication-venue">IEEE TIP 2025</span>
         <div>
-          <h3>UCDS: Unlocking Cross‑Domain Synergies for Domain Adaptive Semantic Segmentation</h3>
+          <h3>UCDS: Unlocking Cross-Domain Synergies for Domain Adaptive Semantic Segmentation</h3>
           <p class="publication-authors">Qin Xu, Qihang Wu, Bo Jiang, Jiahui Wang, Yuan Chen, Jinhui Tang</p>
         </div>
       </div>
@@ -253,7 +188,7 @@
 <footer class="footer-band" id="contact">
   <div>
     <p class="footer-title">Qihang Wu</p>
-    <p>AI algorithm & systems engineer with research experience in computer vision.</p>
+    <p>AI algorithm and systems engineer working where model ideas meet training infrastructure, inference paths, and implementation tradeoffs.</p>
   </div>
   <div class="footer-links">
     <a href="mailto:wqh011128@163.com">wqh011128@163.com</a>
