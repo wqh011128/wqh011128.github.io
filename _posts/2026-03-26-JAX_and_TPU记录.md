@@ -6,57 +6,47 @@ categories:
   - blog
 ---
 
+# JAX + TPU 两个重点问题
 
-# 1. JAX + TPU 排查笔记
+这次其实只需要抓住两个问题：
 
-## 0. 先记住几个核心概念
-
-- **`jax.default_backend()`**：返回当前默认的 XLA backend 名称，比如 `cpu`、`gpu`、`tpu`。  
-- **`jax.devices()`**：返回某个 backend 下可见的设备列表。  
-- **`jax.Array`**：JAX 的数组对象，数组本身会携带设备与 `sharding` 信息。  
-- **`block_until_ready()`**：JAX 默认是 **asynchronous dispatch**，很多计算只是“下发”了，并不代表设备端已经真正算完；要做准确判断或准确计时，通常需要显式同步。  
-- **`tpu-info`**：一个 Cloud TPU 侧的监控工具，它从 **`libtpu`** 读取运行时指标，比如 HBM usage、duty cycle、TensorCore utilization。  
-- **`libtpu`**：Cloud TPU 的基础软件层，包含驱动、网络库、XLA compiler 和 TPU runtime。  
+1. **如何监控：我到底有没有真正用上 TPU，运行时状态怎么看？**
+2. **`XLA_FLAGS` 和 `LIBTPU_INIT_ARGS` 到底分别控制什么，会额外产出什么？**
 
 ---
 
-## 1. 问题一：`tpu-info` 能看到 TPU 芯片，但利用率指标是 `N/A`，或者提示 `libtpu` 相关问题
+## 1. 如何监控 JAX + TPU
 
-### 问题描述
+我现在更倾向于把“监控”分成三层看，因为很多混淆都来自把这三层混在一起。
 
-典型现象是：
+### 1.1 第一层：机器上有没有 TPU 设备
 
-- `tpu-info` 能识别出 TPU 型号，比如 `v6e`
-- 也能看到 `/dev/vfio/0`
-- 但 `HBM Usage`、`Duty cycle`、`TensorCore Utilization` 显示为 `N/A`
-- 或者出现类似 `libtpu not found`、`Libtpu metrics unavailable` 的提示
+这一层回答的是：
 
-### 可能原因
+> **机器有没有挂上 TPU 芯片。**
 
-1. **机器层面已经挂上 TPU 设备了，但当前环境没正确接上 `libtpu`**
-2. **`tpu-info` 版本和当前环境不兼容**
-3. **当前没有真正使用 TPU 的 framework 进程在跑**
-4. **虽然 `libtpu` 存在，但 runtime 指标还没被有效暴露出来**
+常用命令：
 
-### JAX / TPU 专业知识
-
-`tpu-info` 不是直接“看硬件寄存器”，它主要是从 **`libtpu`** 读取运行时指标。  
-而 `libtpu` 本身不仅仅是一个 Python 包，它背后对应的是 TPU runtime 这一整层基础设施。  
-因此，“能看到 TPU 芯片”只说明 **设备存在**；“能看到实时利用率”才说明 **runtime 指标也可用**。这两件事不是同一个层级。
-
-### 简单模拟例子
-
-```python
-try:
-    import libtpu
-    print("libtpu OK:", libtpu.__file__)
-except Exception as e:
-    print("libtpu import failed:", repr(e))
+```bash
+tpu-info
+tpu-info --streaming --rate 2
 ```
 
-如果这里就失败，说明当前 Python 环境根本没接好 `libtpu`。
+如果 `tpu-info` 能看到型号、芯片数量、`/dev/vfio/*`，说明**设备层面**是存在的。
 
-### 实用检查命令
+但这里要注意一个关键点：
+
+- **能看到 TPU 芯片，不等于能看到 TPU 利用率**
+- `HBM Usage`、`Duty cycle`、`TensorCore Utilization` 出现 `N/A`，通常说明 **runtime 指标没有正确暴露出来**
+
+最常见原因有这些：
+
+- 当前环境没有正确接上 `libtpu`
+- `tpu-info` 和当前环境不兼容
+- 当前没有真正跑 TPU workload
+- runtime metrics 本身还不可用
+
+可以先做一个最小检查：
 
 ```bash
 python - <<'PY'
@@ -66,57 +56,17 @@ try:
 except Exception as e:
     print("libtpu import failed:", repr(e))
 PY
-
-tpu-info
-tpu-info --streaming --rate 2
 ```
 
-这些命令分别用于检查 `libtpu` 是否能导入，以及 `tpu-info` 是否能读到运行时指标。
+如果这里连 `libtpu` 都导不进来，那么 `tpu-info` 读不到完整指标就不奇怪。
 
----
+### 1.2 第二层：JAX 有没有成功连到 TPU backend
 
-## 2. 问题二：`jax.default_backend()` 是 `tpu`，`jax.devices()` 也有 `TpuDevice`，这说明什么？
+这一层回答的是：
 
-### 问题描述
+> **JAX 这个进程，是否真的初始化了 TPU backend。**
 
-典型输出像这样：
-
-```python
-backend: tpu
-device_count: 1
-devices: [TpuDevice(id=0, process_index=0, ...)]
-```
-
-### 可能原因
-
-这通常不是“问题”，而是说明：
-
-1. **JAX 已经成功初始化了 TPU backend**
-2. **当前 Python 进程可以看到 TPU 设备**
-3. **至少从 backend 连接层面，JAX → TPU 是通的**
-
-### JAX 专业知识
-
-`jax.default_backend()` 只回答一个问题：  
-
-**“JAX 默认打算把计算发到哪个 backend？”**
-
-`jax.devices()` 回答的是：  
-
-**“这个 backend 下有哪些设备对当前进程可见？”**
-
-只要 `jax.devices()[0].platform == 'tpu'` 成立，就可以确认程序已经接到了 TPU。
-
-### 需要特别注意
-
-**这不等于“整个 Python 程序都在 TPU 上跑”。**
-
-实际情况是：
-
-- 数据加载、普通 Python 循环、字符串处理、日志打印，仍然主要发生在 CPU/host 侧
-- 真正放到 TPU 上执行的是 **JAX/XLA 编译后的数组计算部分**
-
-### 简单模拟例子
+最小判断代码：
 
 ```python
 import jax
@@ -127,51 +77,29 @@ print("devices:", jax.devices())
 assert jax.devices()[0].platform == "tpu"
 ```
 
-如果断言通过，说明 **JAX backend 已经正确连到 TPU**。
+如果输出类似：
 
----
+```python
+backend: tpu
+devices: [TpuDevice(...)]
+```
 
-## 3. 问题三：怎么确认“具体这一步计算”真的在 TPU 上执行，而不只是环境认到了 TPU？
+说明的事情只有一件：
 
-### 问题描述
+> **JAX backend 已经接到 TPU 了。**
 
-你可能已经看到：
+但这还不等于“整段 Python 程序都在 TPU 上跑”。  
+真正上 TPU 的，只是 JAX/XLA 编译后的数组计算部分；数据加载、Python 循环、日志打印仍然主要在 host 侧。
 
-- `backend == tpu`
-- `devices == [TpuDevice(...)]`
+### 1.3 第三层：具体这一步计算是否真的在 TPU 上执行
 
-但你还想进一步确认：
+这一层回答的是：
 
-> “我的这段矩阵乘法、我的这一步 `step()`、我的训练 forward/backward，真的下发到 TPU 了吗？”
+> **不是环境认到了 TPU，而是这一步 `step()`、这次 matmul、这次训练迭代，是否真的在 TPU 上算了。**
 
-### 可能原因
+最实用的判断方式有三种。
 
-之所以会产生这个疑问，是因为：
-
-1. JAX 会把很多事情延后到编译或执行阶段
-2. JAX 默认是 **asynchronous dispatch**
-3. 不是所有 Python 代码都会上 TPU，真正上 TPU 的只是 JAX 数组计算
-
-### JAX 专业知识
-
-有三种常用判断方法：
-
-#### 方法 1：看结果数组的设备 / `sharding`
-
-JAX 的 `jax.Array` 会携带设备布局信息。  
-因此，一个很实用的办法是：**看输出数组落在哪个设备上**。如果输出数组的 `device` 或 `addressable_shards` 对应 `TpuDevice`，那这一步结果就是在 TPU 侧持有的。
-
-#### 方法 2：显式同步 `block_until_ready()`
-
-JAX 的 **asynchronous dispatch** 意味着：  
-Python 线程可能只是把工作“排队”给设备了，然后立刻继续往下跑；只有当你真的去取值、打印值、转成 NumPy，或者主动同步时，主机才会等待设备完成。  
-因此，如果你不做 `block_until_ready()`，你看到的“运行完成”很可能只是 **dispatch 完成**，不是 **TPU 计算完成**。
-
-#### 方法 3：做 profiler
-
-如果你想要更硬的证据，可以对程序进行 profile，检查 trace 中是否出现 TPU operations。
-
-### 简单模拟例子
+#### 方法 1：看输出数组落在哪个设备上
 
 ```python
 import jax
@@ -185,135 +113,33 @@ x = jnp.ones((4096, 4096))
 y = step(x)
 y.block_until_ready()
 
-print("backend:", jax.default_backend())
 print("device:", y.device)
 print("sharding:", y.sharding)
 print("addressable shard devices:", [s.device for s in y.addressable_shards])
 ```
 
-如果输出里的 `device` 或 `addressable_shards` 对应的是 `TpuDevice(...)`，并且 `block_until_ready()` 正常完成，那么这一步计算就可以认为已经真实在 TPU 上执行并完成了。
+如果 `device` 或 `addressable_shards` 对应的是 `TpuDevice(...)`，说明这一步结果确实落在 TPU 上。
 
----
+#### 方法 2：显式同步 `block_until_ready()`
 
-## 4. 问题四：报错 `The TPU is already in use by process with pid ...`
+这是判断 TPU 计算是否**真的完成**时最容易漏掉的一步。
 
-### 问题描述
+JAX 默认是 **asynchronous dispatch**。也就是说：
 
-典型报错：
+- Python 线程可能只是把任务提交给 TPU
+- 任务还在设备端排队或执行
+- 主线程已经继续往下跑了
 
-```text
-RuntimeError: Unable to initialize backend 'tpu':
-ABORTED: The TPU is already in use by process with pid 22589.
-Not attempting to load libtpu.so in this process.
-```
-
-### 可能原因
-
-最常见的原因有：
-
-1. 你已经有另一个 Python / JAX 进程在占用这块 TPU
-2. 之前开的训练脚本没有退出
-3. 你在另一个终端、`tmux`、`screen`、notebook kernel 里已经先启动过 TPU 程序
-4. 当前脚本又启动了新的独立进程，新的进程试图再次初始化 TPU runtime
-
-### JAX / TPU 专业知识
-
-这类报错的核心不是“JAX 坏了”，而是：
-
-> **当前这块 TPU 已经被另一个独立进程先初始化并占用了。**
-
-要区分两种情况：
-
-#### 情况 A：两个互不协调的独立脚本抢同一块 TPU
-
-这是最常见的错误用法。  
-第一个进程已经把 TPU runtime 接管了，第二个独立进程再来初始化 TPU，就会被拒绝。
-
-#### 情况 B：真正的 multi-process / multi-controller JAX
-
-JAX 确实支持多进程分布式，但它不是“随便两个脚本都能同时连同一块 TPU”。  
-多进程场景下需要多个 controller 进程协同运行，并通过 `jax.distributed.initialize()` 建立分布式环境；各进程通常运行同一套脚本，并按一致顺序执行 JAX 操作。  
-这是一种 **协调式 distributed execution**，不是“多个不相干脚本随意共享一块 TPU”。
-
-### 简单模拟例子
-
-#### 进程 A
-
-```python
-import jax
-import jax.numpy as jnp
-x = jnp.ones((8192, 8192))
-y = x @ x
-y.block_until_ready()
-
-input("holding TPU...")
-```
-
-#### 进程 B
-
-```python
-import jax
-import jax.numpy as jnp
-x = jnp.ones((4096, 4096))
-```
-
-如果进程 A 已经占住 TPU，进程 B 在初始化 TPU backend 时就可能报 “already in use by process ...”。
-
-### 实用检查命令
-
-```bash
-ps -fp 22589
-sudo lsof -w /dev/vfio/*
-tpu-info
-```
-
-这几条命令分别用于：
-
-- 看指定 PID 是什么进程
-- 看 `/dev/vfio/*` 这种 TPU 设备文件被谁打开了
-- 用 `tpu-info` 查看 TPU 芯片与对应 PID
-
----
-
-## 5. 问题五：为什么有时看起来“代码很快就结束了”，但其实 TPU 可能还没真正算完？
-
-### 问题描述
-
-你可能写了下面这种代码：
+所以像下面这种代码：
 
 ```python
 y = step(x)
 print("done")
 ```
 
-然后发现程序几乎瞬间打印 `done`。  
-这时候很容易误以为：
+很多时候只能说明 **dispatch 完成了**，不能说明 **TPU 已经算完了**。
 
-> “TPU 已经把这一步算完了。”
-
-### 可能原因
-
-真正的原因通常是：
-
-1. JAX 采用 **asynchronous dispatch**
-2. Python 主线程只是把任务下发给设备
-3. 设备端还在跑，但主线程已经继续执行后面的代码了
-
-### JAX 专业知识
-
-JAX 的 **asynchronous dispatch** 表示：  
-Python 可以“跑在 accelerator 前面”，即主机侧代码继续执行，而 accelerator 侧工作仍在排队或执行中。  
-因此，如果你想做**准确计时**、**准确判断是否执行完成**、**检查某一步是否真跑在 TPU 上**，通常都要显式调用：
-
-```python
-y.block_until_ready()
-# 或者
-jax.block_until_ready(y)
-```
-
-否则你测到的往往只是 **提交任务的时间**，不是 **设备真正执行完成的时间**。
-
-### 简单模拟例子
+如果要做准确判断或准确计时，应该这样写：
 
 ```python
 import time
@@ -337,107 +163,14 @@ print("dispatch time:", t1 - t0)
 print("real execution time:", t2 - t0)
 ```
 
-一般来说：
+通常：
 
-- `dispatch time` 会更短
-- `real execution time` 才更接近真实 TPU 计算时间
+- `dispatch time` 只是任务提交时间
+- `real execution time` 才更接近真实 TPU 执行时间
 
----
+#### 方法 3：需要铁证时，用 profiler
 
-## 6. 问题六：`JAX_PLATFORMS` 是干什么的？为什么有时它会影响报错行为？
-
-### 问题描述
-
-有时 JAX 报错里会提示：
-
-```text
-set JAX_PLATFORMS='' to automatically choose an available backend
-```
-
-或者你可能自己设置过：
-
-```bash
-JAX_PLATFORMS=tpu
-JAX_PLATFORMS=cpu,tpu
-```
-
-### 可能原因
-
-这是因为 `JAX_PLATFORMS` 控制了：
-
-1. JAX 要初始化哪些 backend
-2. 哪个 backend 作为默认 backend
-3. 某个 backend 初始化失败时，程序是直接报错还是改用别的 backend
-
-### JAX 专业知识
-
-`JAX_PLATFORMS` 是一个 **逗号分隔** 的 platform 名称列表。
-
-例如：
-
-```bash
-JAX_PLATFORMS=cpu,tpu
-```
-
-表示初始化 CPU 和 TPU backend，并且默认 backend 是 CPU；如果 TPU 初始化失败，仍然会报异常。  
-所以这个变量更像是一种 **强约束配置**，而不是“随便试试哪个能用”。
-
-### 简单模拟例子
-
-#### 强制只用 TPU
-
-```bash
-JAX_PLATFORMS=tpu python test.py
-```
-
-如果 TPU 初始化失败，程序会直接报错。
-
-#### 让 JAX 自动选可用 backend
-
-```bash
-JAX_PLATFORMS='' python test.py
-```
-
-这通常更适合临时调试，因为它允许 JAX 自动选择当前可用 backend。
-
----
-
-## 7. 问题七：怎么做“最小化、最可靠”的 TPU 判断？
-
-### 推荐判断顺序
-
-我更推荐按下面这套顺序检查：
-
-### 第一步：确认 JAX 是否认到 TPU
-
-```python
-import jax
-
-print("backend:", jax.default_backend())
-print("devices:", jax.devices())
-assert jax.devices()[0].platform == "tpu"
-```
-
-### 第二步：确认具体输出数组是否落在 TPU 上
-
-```python
-import jax
-import jax.numpy as jnp
-
-@jax.jit
-def step(x):
-    return x @ x
-
-x = jnp.ones((4096, 4096))
-y = step(x)
-y.block_until_ready()
-
-print("device:", y.device)
-print("sharding:", y.sharding)
-print("addressable shard devices:", [s.device for s in y.addressable_shards])
-```
-
-### 第三步：需要铁证时，做 profiler
+如果要看更硬的证据，直接做 profile。
 
 ```python
 import jax
@@ -455,22 +188,204 @@ jax.profiler.start_trace("/tmp/profile-data")
 jax.profiler.stop_trace()
 ```
 
-JAX profiler 可以采集 CPU/GPU/TPU activity。
+这时候关心的就不是“数组在哪”，而是 trace 里有没有真正的 TPU activity。
+
+### 1.4 监控时最容易误判的三件事
+
+#### 误判 1：`tpu-info` 有芯片信息，就以为 TPU 一定在正常工作
+
+不对。  
+这最多说明**设备存在**，不说明 **runtime metrics 可用**，更不说明 **JAX 已经在跑 TPU 计算**。
+
+#### 误判 2：程序很快打印 `done`，就以为 TPU 已经算完
+
+不对。  
+这通常只是 asynchronous dispatch 的表现，必须配合 `block_until_ready()` 看。
+
+#### 误判 3：报 `The TPU is already in use by process with pid ...`，以为是 JAX 坏了
+
+这类报错的核心含义其实很简单：
+
+> **另一独立进程已经先初始化并占住了 TPU runtime。**
+
+常用检查命令：
+
+```bash
+ps -fp 22589
+sudo lsof -w /dev/vfio/*
+tpu-info
+```
+
+这通常是另一个脚本、另一个终端、`tmux`、notebook kernel 还没退出，不是 TPU “坏了”。
+
+### 1.5 一个最小但可靠的监控顺序
+
+如果我只想快速判断 TPU 状态，我会按这个顺序看：
+
+1. `tpu-info`
+   先确认机器层面有没有 TPU 设备。
+2. `jax.default_backend()` 和 `jax.devices()`
+   确认当前 JAX 进程有没有成功连到 TPU backend。
+3. 输出数组的 `device / sharding / addressable_shards`
+   确认具体计算结果是不是落在 TPU 上。
+4. `block_until_ready()`
+   确认这一步不是只完成 dispatch，而是真的执行完。
+5. profiler
+   需要最硬证据时再上。
 
 ---
 
-## 8. 一句话总结
+## 2. `XLA_FLAGS` 和 `LIBTPU_INIT_ARGS` 到底分别是什么
 
-### 可以把常见现象压缩成下面四句话
+这两个变量最容易混淆的点在于：它们都和 XLA / TPU 编译过程有关，但**不在同一层**。
 
-1. **`jax.devices()` 里有 `TpuDevice`**  
-   说明 **JAX backend 已经接到 TPU**。
+### 2.1 先记结论
 
-2. **输出数组的 `device / sharding / addressable_shards` 指向 TPU**  
-   说明 **这一步结果确实落在 TPU 设备上**。
+- **`XLA_FLAGS`**：更偏 **XLA 编译器 / HLO pass** 这一层
+- **`LIBTPU_INIT_ARGS`**：更偏 **TPU backend / libtpu runtime / LLO lowering** 这一层
 
-3. **不加 `block_until_ready()`，很多时候只代表任务已经提交，不代表 TPU 已经算完**  
-   这是 **asynchronous dispatch** 的典型表现。
+所以它们不是同一个入口的两个写法，而是作用在**不同层级**的参数。
 
-4. **`TPU is already in use by process ...`**  
-   说明 **另一独立进程已经先占住了 TPU runtime**；这和真正受协调的 multi-process JAX 不是一回事。
+### 2.2 `XLA_FLAGS` 在控制什么
+
+例如：
+
+```bash
+XLA_FLAGS="--xla_dump_to=/tmp/xla_dump --xla_dump_hlo_pass_re=.*"
+```
+
+大致含义是：
+
+- 把 XLA 编译过程中的 dump 文件写到 `/tmp/xla_dump`
+- 对匹配 `.*` 的 HLO pass 都进行 dump
+
+所以 `XLA_FLAGS` 更像是在说：
+
+> **把 XLA 编译器这一层的中间状态吐出来给我看。**
+
+它主要对应的是：
+
+- HLO dump
+- HLO pass 前后变化
+- 文本、图、proto 一类中间产物
+
+### 2.3 `LIBTPU_INIT_ARGS` 在控制什么
+
+例如：
+
+```bash
+LIBTPU_INIT_ARGS="--xla_jf_dump_to=/tmp/dump_llo/"
+```
+
+它更像是在说：
+
+> **在 TPU 后端 / libtpu 初始化时，把更靠近设备 lowering 的中间结果也吐出来。**
+
+粗略理解就是：
+
+- `XLA_FLAGS` 更偏 **HLO / XLA pass**
+- `LIBTPU_INIT_ARGS` 更偏 **TPU backend / LLO / 更接近设备代码生成**
+
+也可以把它理解成：
+
+- 前者更偏“通用编译器视角”
+- 后者更偏“TPU 插件和后端视角”
+
+### 2.4 它们会不会改变项目自己导出的 HLO
+
+通常要分成两类看。
+
+#### 第一类：项目代码自己主动导出的 HLO
+
+比如项目里如果有这种逻辑：
+
+- `lowered_func.as_text("hlo")`
+- `lowered_func.compile().as_text()`
+
+这类输出是**你的代码自己主动调用 API 导出的文本表示**。
+
+这时 `XLA_FLAGS` 和 `LIBTPU_INIT_ARGS` 的作用并不是“把这个 API 变成另一套接口”，而是：
+
+> **额外让编译器 / TPU backend 再多产出一批调试文件。**
+
+换句话说，项目自己导出的 HLO 仍然是你的主输出；这些环境变量只是额外加旁路 dump。
+
+#### 第二类：编译器和 TPU backend 额外 dump 的中间文件
+
+如果你打开这些参数，通常会额外得到：
+
+- `/tmp/xla_dump` 里的 HLO pass 过程文件
+- `/tmp/dump_llo/` 里的 TPU/LLO lowering 过程文件
+
+这些文件更适合回答的问题是：
+
+- 图在某个 pass 前后怎么变了
+- 某一步 lowering 到 TPU backend 后长什么样
+- 到底是 HLO 层改了，还是更后面的 TPU lowering 改了
+
+所以更准确的说法不是“这些变量改变了最终 HLO 的语义”，而是：
+
+> **它们让你看见更多编译过程中的中间状态。**
+
+### 2.5 同时打开时，实际会得到什么
+
+如果同时设置：
+
+```bash
+XLA_FLAGS="--xla_dump_to=/tmp/xla_dump --xla_dump_hlo_pass_re=.*"
+LIBTPU_INIT_ARGS="--xla_jf_dump_to=/tmp/dump_llo/"
+```
+
+那通常会得到三套东西：
+
+1. 项目自己输出的稳定结果  
+   例如你代码里主动导出的优化前/优化后 HLO 文本。
+
+2. `/tmp/xla_dump` 里的 XLA/HLO pass dump  
+   适合看编译器在每个 pass 里怎么改图。
+
+3. `/tmp/dump_llo/` 里的 TPU/LLO dump  
+   适合看更靠近 TPU backend 的 lowering 结果。
+
+如果目标是：
+
+- **拿一份稳定结果做分析、比对、复现**  
+  优先看项目自己导出的 HLO。
+
+- **排查到底哪个 pass 把图改了**  
+  重点看 `XLA_FLAGS` 生成的 dump。
+
+- **排查 TPU 后端 lowering 到底发生了什么**  
+  再看 `LIBTPU_INIT_ARGS` 生成的 dump。
+
+### 2.6 一个很重要的前提
+
+这两个环境变量都必须在 **JAX / TPU backend 初始化之前** 就进入进程环境。
+
+也就是说，它们本质上是：
+
+- **进程启动前配置**
+- **backend 初始化前配置**
+
+而不是：
+
+- `lowered_func.compile(...)` 的 Python 函数参数
+- 代码跑到一半临时加上的调试开关
+
+如果 backend 已经初始化完，再去设置它们，通常就太晚了，或者只会部分生效。
+
+### 2.7 我的实用理解
+
+如果只记一句话，我会记成：
+
+> **`XLA_FLAGS` 用来看 HLO/XLA pass，`LIBTPU_INIT_ARGS` 用来看 TPU backend/LLO lowering。**
+
+---
+
+## 3. 最后压缩成几句话
+
+1. **监控 TPU 要分三层：设备是否存在、JAX 是否连上、具体计算是否真的执行。**
+2. **`tpu-info` 能看到芯片，只说明设备存在；看到实时利用率才说明 runtime 指标也可用。**
+3. **判断某一步是否真的在 TPU 上完成，最实用的是 `device/sharding` 加 `block_until_ready()`。**
+4. **`XLA_FLAGS` 更偏 HLO/XLA pass，`LIBTPU_INIT_ARGS` 更偏 TPU backend/LLO lowering。**
+5. **这两个变量通常不是改变最终 HLO 语义，而是让你拿到更多编译中间产物。**
