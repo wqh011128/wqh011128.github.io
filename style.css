@@ -554,6 +554,13 @@ main.revealed {
   color: inherit;
 }
 
+.post-content mjx-container {
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+  margin: 1rem 0;
+}
+
 .post-content blockquote {
   padding-left: 1rem;
   border-left: 3px solid var(--accent);
