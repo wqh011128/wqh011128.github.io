@@ -658,11 +658,15 @@ main {
 .post-outline {
   position: sticky;
   top: 20px;
+  max-height: calc(100vh - 40px);
+  overflow: auto;
+  overscroll-behavior: contain;
   padding: 20px;
   border: 1px solid var(--line);
   border-radius: 22px;
   background: var(--surface-strong);
   box-shadow: var(--shadow);
+  scrollbar-width: thin;
 }
 
 .post-outline-head {
@@ -677,6 +681,7 @@ main {
 .post-outline-nav {
   display: grid;
   gap: 0.35rem;
+  padding-right: 0.15rem;
 }
 
 .toc-link {
@@ -799,8 +804,7 @@ main {
   .hero-layout,
   .archive-hero,
   .resource-columns,
-  .project-grid,
-  .post-layout {
+  .project-grid {
     grid-template-columns: 1fr;
   }
 
@@ -811,9 +815,16 @@ main {
   .post-shell {
     width: min(860px, calc(100vw - 48px));
   }
+}
+
+@media (max-width: 860px) {
+  .post-layout {
+    grid-template-columns: 1fr;
+  }
 
   .post-outline {
     position: static;
+    max-height: none;
   }
 }
 

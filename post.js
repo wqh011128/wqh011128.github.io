@@ -56,11 +56,25 @@ function buildOutline() {
 
   const links = [...nav.querySelectorAll(".toc-link")];
   const activeLinkById = new Map(links.map((link) => [link.dataset.target, link]));
+  let activeId = "";
 
   const setActive = (id) => {
+    if (!id || activeId === id) {
+      return;
+    }
+
+    activeId = id;
     links.forEach((link) => {
       link.classList.toggle("active", link.dataset.target === id);
     });
+
+    const currentLink = activeLinkById.get(id);
+    if (currentLink) {
+      currentLink.scrollIntoView({
+        block: "nearest",
+        inline: "nearest"
+      });
+    }
   };
 
   if ("IntersectionObserver" in window) {
