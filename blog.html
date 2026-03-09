@@ -11,7 +11,7 @@ title: Resources
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="{{ '/style.css' | relative_url }}" />
@@ -23,26 +23,36 @@ title: Resources
     {% assign pdf_files = site.static_files | where_exp: "item", "item.extname == '.pdf'" %}
     <main class="archive-shell">
       <header class="topbar">
-        <div class="topbar-links social-links" aria-label="Social links">
-          <a href="mailto:wqh011128@163.com">mail</a>
-          <a href="https://github.com/wqh011128" target="_blank" rel="noreferrer">github</a>
-          <a href="{{ '/feed.xml' | relative_url }}">rss</a>
+        <div class="topbar-brand">
+          <span class="brand-mark">QW</span>
+          <div>
+            <p class="brand-name">Qihang Wu</p>
+            <p class="brand-role">Notes, posts, and static resources</p>
+          </div>
         </div>
-        <nav class="topbar-links site-nav" aria-label="Primary navigation">
-          <a href="{{ '/' | relative_url }}">home</a>
-          <a class="active" href="{{ '/blog.html' | relative_url }}">blog</a>
-          <a href="#markdown-resources">markdown</a>
-          <a href="#document-resources">documents</a>
-        </nav>
+
+        <div class="topbar-actions">
+          <nav class="topbar-links site-nav" aria-label="Primary navigation">
+            <a href="{{ '/' | relative_url }}">home</a>
+            <a class="active" href="{{ '/blog.html' | relative_url }}">blog</a>
+            <a href="#markdown-resources">posts</a>
+            <a href="#document-resources">documents</a>
+          </nav>
+          <div class="topbar-links social-links" aria-label="Social links">
+            <a href="mailto:wqh011128@163.com">mail</a>
+            <a href="https://github.com/wqh011128" target="_blank" rel="noreferrer">github</a>
+            <a href="{{ '/feed.xml' | relative_url }}">rss</a>
+          </div>
+        </div>
       </header>
 
       <section class="archive-hero">
         <div class="archive-copy">
-          <p class="eyebrow">Knowledge Base</p>
-          <h1>All posts and document assets in one place.</h1>
+          <p class="eyebrow">Resource hub</p>
+          <h1>Writing, slides, and papers collected in one place.</h1>
           <p class="archive-summary">
-            This page groups content from the <code>_posts</code>, <code>ppt</code>, and
-            <code>pdf</code> directories so the homepage can stay focused on recent writing.
+            This page aggregates posts from <code>_posts</code> together with static PPT, PPTX,
+            and PDF assets so the homepage can stay focused on identity and selected work.
           </p>
         </div>
 
@@ -66,9 +76,9 @@ title: Resources
         <div class="section-heading">
           <div>
             <p class="section-kicker">Category 01</p>
-            <h2>Markdown</h2>
+            <h2>Markdown posts</h2>
           </div>
-          <p class="section-note">Published posts generated from <code>_posts</code>.</p>
+          <p class="section-note">Published writing generated from <code>_posts</code>.</p>
         </div>
 
         <div class="list-table archive-list">
@@ -76,7 +86,7 @@ title: Resources
           <a class="list-row archive-row" href="{{ post.url | relative_url }}">
             <span class="list-date">{{ post.date | date: "%b %d, %Y" }}</span>
             <span class="list-title">{{ post.title }}</span>
-            <span class="row-tag">MD</span>
+            <span class="row-tag">md</span>
           </a>
           {% endfor %}
         </div>
@@ -100,7 +110,7 @@ title: Resources
             <div class="resource-grid">
               {% for file in ppt_files %}
               <a class="resource-card" href="{{ file.path | relative_url }}">
-                <span class="resource-badge">PPT</span>
+                <span class="resource-badge">ppt</span>
                 <strong>{{ file.basename | replace: "_", " " | replace: "-", " " }}</strong>
                 <span class="resource-meta">{{ file.name }}</span>
               </a>
@@ -116,7 +126,7 @@ title: Resources
             <div class="resource-grid">
               {% for file in pdf_files %}
               <a class="resource-card" href="{{ file.path | relative_url }}">
-                <span class="resource-badge">PDF</span>
+                <span class="resource-badge">pdf</span>
                 <strong>{{ file.basename | replace: "_", " " | replace: "-", " " }}</strong>
                 <span class="resource-meta">{{ file.name }}</span>
               </a>

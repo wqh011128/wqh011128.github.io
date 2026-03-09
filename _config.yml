@@ -1,7 +1,7 @@
 title: Qihang Wu
-email: qihang@example.com
+email: wqh011128@163.com
 description: >- # this means to ignore newlines until "baseurl:"
-  Training and inference framework engineer. Research on domain adaptation for semantic segmentation and efficient attention mechanisms.
+  Training and inference framework engineer focused on LLM and VLM systems, with earlier research on domain adaptation for semantic segmentation and efficient attention mechanisms.
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "https://wqh011128.github.io" # the base hostname & protocol for your site
 twitter_username: jekyllrb

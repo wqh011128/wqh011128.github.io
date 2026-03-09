@@ -10,115 +10,218 @@ layout: default
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="{{ '/style.css' | relative_url }}" />
   </head>
-  <body>
+  <body class="home-page">
     <main id="home">
       <header class="topbar">
-        <div class="topbar-links social-links" aria-label="Social links">
-          <a href="mailto:wqh011128@163.com">mail</a>
-          <a href="https://github.com/wqh011128" target="_blank" rel="noreferrer">github</a>
-          <a href="{{ '/feed.xml' | relative_url }}">rss</a>
+        <div class="topbar-brand">
+          <span class="brand-mark">QW</span>
+          <div>
+            <p class="brand-name">Qihang Wu</p>
+            <p class="brand-role">AI systems and research engineering</p>
+          </div>
         </div>
-        <nav class="topbar-links site-nav" aria-label="Primary navigation">
-          <a class="active" href="#about">about</a>
-          <a href="{{ '/blog.html' | relative_url }}">blog</a>
-          <a href="#publications">publications</a>
-          <a href="#contact">cv</a>
-        </nav>
+
+        <div class="topbar-actions">
+          <nav class="topbar-links site-nav" aria-label="Primary navigation">
+            <a class="active" href="#about">about</a>
+            <a href="#work">work</a>
+            <a href="#publications">publications</a>
+            <a href="{{ '/blog.html' | relative_url }}">blog</a>
+          </nav>
+          <div class="topbar-links social-links" aria-label="Social links">
+            <a href="mailto:wqh011128@163.com">mail</a>
+            <a href="https://github.com/wqh011128" target="_blank" rel="noreferrer">github</a>
+            <a href="{{ '/feed.xml' | relative_url }}">rss</a>
+          </div>
+        </div>
       </header>
 
       <section class="hero-layout" id="about">
         <div class="hero-copy">
+          <p class="eyebrow">AI / Research Portfolio</p>
           <h1 class="hero-title">
-            <span>Qihang</span>
-            <span>Wu</span>
+            Training and inference systems for LLMs and VLMs,
+            grounded in computer vision research.
           </h1>
           <p class="hero-summary">
-            <strong>Qihang Wu</strong> is a training and inference framework engineer.
-            He is a member of <a href="https://ahu-spvl.github.io/">AHU-SPVL</a>,
-            where his earlier research focused on domain adaptation for semantic
-            segmentation. He is now working on training and inference systems for
-            LLMs and VLMs.
+            I am Qihang Wu, a training and inference framework engineer. My earlier work at
+            <a href="https://ahu-spvl.github.io/" target="_blank" rel="noreferrer">AHU-SPVL</a>
+            focuses on domain adaptation for semantic segmentation, and my current work centers on
+            efficient training and serving systems for large multimodal models.
           </p>
 
-          <div class="feature-links" aria-label="Selected links">
-            <a href="#publications">
-              CroPe
-              <span>CroPe: Cross-Modal Semantic Compensation
-Adaptation for All Adverse Scene Understanding.</span>
-            </a>
-            <a href="#publications">
-              UCDS
-              <span>Unlocking Cross-Domain Synergies for Domain
-Adaptive Semantic Segmentation.</span>
-            </a>
-            <a href="{{ '/blog.html' | relative_url }}">
-              Linear Attention
-              <span>Review the development of linear attention and study its hardware-efficient implementation.</span>
-            </a>
+          <div class="hero-tags" aria-label="Focus areas">
+            <span>LLM/VLM systems</span>
+            <span>Training infrastructure</span>
+            <span>Domain adaptation</span>
+            <span>Efficient attention</span>
+          </div>
+
+          <div class="hero-actions">
+            <a class="primary-button" href="#publications">View publications</a>
+            <a class="secondary-button" href="{{ '/blog.html' | relative_url }}">Explore writing</a>
           </div>
         </div>
 
-        <aside class="hero-visual" aria-label="Profile panel">
-          <div class="portrait-card">
-            <div class="portrait-glow"></div>
-            <div class="portrait-frame">
-              <div class="portrait-photo" aria-hidden="true">
-                <img src="{{ '/img/me.jpg' | relative_url }}" alt="Profile photo of Qihang Wu">
+        <aside class="hero-side" aria-label="Profile snapshot">
+          <article class="profile-card">
+            <div class="profile-card-head">
+              <div class="profile-avatar" aria-hidden="true">QW</div>
+              <div>
+                <p class="profile-label">Current focus</p>
+                <h2>Research-informed engineering</h2>
               </div>
             </div>
-          </div>
+
+            <div class="profile-metrics">
+              <div>
+                <span class="metric-value">2</span>
+                <span class="metric-label">selected papers</span>
+              </div>
+              <div>
+                <span class="metric-value">4</span>
+                <span class="metric-label">focus areas</span>
+              </div>
+              <div>
+                <span class="metric-value">1</span>
+                <span class="metric-label">resource hub</span>
+              </div>
+            </div>
+
+            <div class="profile-list">
+              <p>Research: domain adaptation, adverse scene understanding.</p>
+              <p>Engineering: training, inference, and efficient model serving.</p>
+              <p>Writing: notes and resources on linear attention and model systems.</p>
+            </div>
+          </article>
         </aside>
       </section>
 
+      <section class="content-section" id="work">
+        <div class="section-headline">
+          <div>
+            <p class="section-kicker">Selected work</p>
+            <h2>Projects and research themes</h2>
+          </div>
+          <p class="section-note">A compact view of the projects that best represent my current profile.</p>
+        </div>
+
+        <div class="project-grid">
+          <article class="project-card featured">
+            <span class="card-tag">NeurIPS 2025</span>
+            <h3>CroPe</h3>
+            <p>
+              Cross-modal semantic compensation for adverse scene understanding, with a focus on
+              robust semantic segmentation under rain, snow, fog, and nighttime conditions.
+            </p>
+            <div class="card-links">
+              <a href="https://openreview.net/pdf?id=38n8pFvldK" target="_blank" rel="noreferrer">paper</a>
+              <a href="https://github.com/wqh011128/CroPe" target="_blank" rel="noreferrer">code</a>
+            </div>
+          </article>
+
+          <article class="project-card">
+            <span class="card-tag">IEEE TIP 2025</span>
+            <h3>UCDS</h3>
+            <p>
+              A cross-domain collaborative framework that improves pseudo-label quality and feature
+              discrimination for domain adaptive semantic segmentation.
+            </p>
+            <div class="card-links">
+              <a href="https://ieeexplore.ieee.org/document/11313775" target="_blank" rel="noreferrer">paper</a>
+              <a href="https://github.com/wqh011128/UCDS" target="_blank" rel="noreferrer">code</a>
+            </div>
+          </article>
+
+          <article class="project-card">
+            <span class="card-tag">Writing</span>
+            <h3>Linear Attention Notes</h3>
+            <p>
+              A running collection of posts and resources on linear attention, hardware efficiency,
+              and practical implementation details.
+            </p>
+            <div class="card-links">
+              <a href="{{ '/blog.html' | relative_url }}">browse resources</a>
+            </div>
+          </article>
+        </div>
+      </section>
+
       <section class="content-section" id="posts">
-        <h2>latest posts</h2>
+        <div class="section-headline">
+          <div>
+            <p class="section-kicker">Latest writing</p>
+            <h2>Recent posts</h2>
+          </div>
+          <a class="section-link" href="{{ '/blog.html' | relative_url }}">See all resources</a>
+        </div>
+
         <div class="list-table">
-          {% for post in site.posts limit: 3 %}
+          {% for post in site.posts limit: 4 %}
           <a class="list-row" href="{{ post.url | relative_url }}">
             <span class="list-date">{{ post.date | date: "%b %d, %Y" }}</span>
             <span class="list-title">{{ post.title }}</span>
+            <span class="row-tag">post</span>
           </a>
           {% endfor %}
         </div>
-        <a class="section-link" href="{{ '/blog.html' | relative_url }}">Browse all markdown, PPT, and PDF resources</a>
       </section>
 
       <section class="content-section" id="publications">
-        <h2>selected publications</h2>
+        <div class="section-headline">
+          <div>
+            <p class="section-kicker">Publications</p>
+            <h2>Selected papers</h2>
+          </div>
+          <p class="section-note">Research spanning adverse scene understanding and domain adaptation.</p>
+        </div>
+
         <div class="publication-list">
           <article class="publication-item">
             <div class="publication-header">
               <span class="publication-venue">NeurIPS 2025</span>
-              <h3>CroPe: Cross-Modal Semantic Compensation Adaptation for All Adverse Scene Understanding</h3>
+              <div>
+                <h3>CroPe: Cross-Modal Semantic Compensation Adaptation for All Adverse Scene Understanding</h3>
+                <p class="publication-authors">Qin Xu, Qihang Wu, Hongtao Lu, Xiaoxia Cheng, Bo Jiang</p>
+              </div>
             </div>
-            <p class="publication-authors">Qin Xu, Qihang Wu, Hongtao Lu, Xiaoxia Cheng, Bo Jiang</p>
             <div class="publication-buttons">
-              <a href="https://openreview.net/pdf?id=38n8pFvldK" class="pub-button">PAPER</a>
-              <a href="https://github.com/wqh011128/CroPe" class="pub-button">CODE</a>
+              <a href="https://openreview.net/pdf?id=38n8pFvldK" class="pub-button" target="_blank" rel="noreferrer">paper</a>
+              <a href="https://github.com/wqh011128/CroPe" class="pub-button" target="_blank" rel="noreferrer">code</a>
             </div>
           </article>
+
           <article class="publication-item">
             <div class="publication-header">
               <span class="publication-venue">IEEE TIP 2025</span>
-              <h3>UCDS: Unlocking Cross-Domain Synergies for Domain Adaptive Semantic Segmentation</h3>
+              <div>
+                <h3>UCDS: Unlocking Cross-Domain Synergies for Domain Adaptive Semantic Segmentation</h3>
+                <p class="publication-authors">Qin Xu, Qihang Wu, Bo Jiang, Jiahui Wang, Yuan Chen, Jinhui Tang</p>
+              </div>
             </div>
-            <p class="publication-authors">Qin Xu, Qihang Wu, Bo Jiang, Jiahui Wang, Yuan Chen, Jinhui Tang</p>
             <div class="publication-buttons">
-              <a href="https://ieeexplore.ieee.org/document/11313775" class="pub-button">PAPER</a>
-              <a href="https://github.com/wqh011128/UCDS" class="pub-button">CODE</a>
+              <a href="https://ieeexplore.ieee.org/document/11313775" class="pub-button" target="_blank" rel="noreferrer">paper</a>
+              <a href="https://github.com/wqh011128/UCDS" class="pub-button" target="_blank" rel="noreferrer">code</a>
             </div>
           </article>
         </div>
       </section>
 
       <footer class="footer-band" id="contact">
-        <p>Qihang Wu</p>
-        <p>Training and inference framework engineer.</p>
+        <div>
+          <p class="footer-title">Qihang Wu</p>
+          <p>Training and inference framework engineer with research experience in computer vision.</p>
+        </div>
+        <div class="footer-links">
+          <a href="mailto:wqh011128@163.com">wqh011128@163.com</a>
+          <a href="https://github.com/wqh011128" target="_blank" rel="noreferrer">GitHub</a>
+          <a href="{{ '/blog.html' | relative_url }}">Blog</a>
+        </div>
       </footer>
     </main>
   </body>
