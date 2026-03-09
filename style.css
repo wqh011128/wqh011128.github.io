@@ -444,6 +444,128 @@ main.revealed {
   margin: 0;
 }
 
+.post-page {
+  background:
+    radial-gradient(circle at top left, rgba(209, 52, 52, 0.08), transparent 32%),
+    linear-gradient(180deg, #fffdfb 0%, #ffffff 22%);
+}
+
+.post-shell {
+  width: min(820px, calc(100vw - 48px));
+  margin: 0 auto;
+  padding: 56px 0 72px;
+}
+
+.post-header {
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+}
+
+.post-back {
+  display: inline-block;
+  margin-bottom: 14px;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.post-meta {
+  margin: 0;
+  color: var(--text-faint);
+  font-size: 0.95rem;
+}
+
+.post-divider {
+  margin: 0 0.45rem;
+}
+
+.post-header h1 {
+  margin: 12px 0 0;
+  font-size: clamp(2rem, 5vw, 3.35rem);
+  line-height: 1.06;
+  letter-spacing: -0.05em;
+}
+
+.post-content {
+  font-size: 1.03rem;
+  line-height: 1.8;
+}
+
+.post-content > h1:first-child {
+  display: none;
+}
+
+.post-content h2,
+.post-content h3,
+.post-content h4 {
+  margin: 2.2rem 0 0.8rem;
+  line-height: 1.25;
+}
+
+.post-content p,
+.post-content ul,
+.post-content ol,
+.post-content blockquote,
+.post-content pre {
+  margin: 1rem 0;
+}
+
+.post-content a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.16em;
+}
+
+.post-content img {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  margin: 1.4rem 0;
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+}
+
+.post-content code,
+.post-content pre {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+.post-content code {
+  padding: 0.1rem 0.35rem;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+  font-size: 0.92em;
+}
+
+.post-content pre {
+  overflow-x: auto;
+  padding: 1rem 1.1rem;
+  background: #111;
+  color: #f3f3f3;
+  border-radius: 10px;
+}
+
+.post-content pre code {
+  padding: 0;
+  background: transparent;
+  color: inherit;
+}
+
+.post-content blockquote {
+  padding-left: 1rem;
+  border-left: 3px solid var(--accent);
+  color: var(--text-soft);
+}
+
+.post-content hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 2rem 0;
+}
+
 @media (max-width: 900px) {
   .hero-layout {
     grid-template-columns: 1fr;
@@ -463,6 +585,11 @@ main.revealed {
   .publication-item {
     grid-template-columns: 1fr;
     gap: 6px;
+  }
+
+  .post-shell {
+    width: min(100vw - 24px, 820px);
+    padding-top: 36px;
   }
 }
 

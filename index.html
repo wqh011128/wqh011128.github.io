@@ -6,14 +6,14 @@ layout: default
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Qihang Wu</title>
+    <title>{{ site.title }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="{{ '/style.css' | relative_url }}" />
   </head>
   <body>
     <div id="intro" aria-live="polite">
@@ -74,7 +74,7 @@ Adaptive Semantic Segmentation.</span>
             <div class="portrait-glow"></div>
             <div class="portrait-frame">
               <div class="portrait-photo" aria-hidden="true">
-                <img src="img/me.jpg" alt="Profile photo of Qihang Wu">
+                <img src="{{ '/img/me.jpg' | relative_url }}" alt="Profile photo of Qihang Wu">
               </div>
             </div>
           </div>
@@ -84,8 +84,8 @@ Adaptive Semantic Segmentation.</span>
       <section class="content-section" id="posts">
         <h2>latest posts</h2>
         <div class="list-table">
-          {% for post in site.posts limit:3 %}
-          <a class="list-row" href="{{ post.url }}">
+          {% for post in site.posts %}
+          <a class="list-row" href="{{ post.url | relative_url }}">
             <span class="list-date">{{ post.date | date: "%b %d, %Y" }}</span>
             <span class="list-title">{{ post.title }}</span>
           </a>
@@ -127,6 +127,6 @@ Adaptive Semantic Segmentation.</span>
       </footer>
     </main>
 
-    <script src="script.js"></script>
+    <script src="{{ '/script.js' | relative_url }}"></script>
   </body>
 </html>

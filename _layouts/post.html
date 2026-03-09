@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ page.title }} | {{ site.title }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{{ '/style.css' | relative_url }}" />
+  </head>
+  <body class="post-page">
+    <main class="post-shell">
+      <header class="post-header">
+        <a class="post-back" href="{{ '/' | relative_url }}#posts">Back to home</a>
+        <p class="post-meta">
+          <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: "%B %d, %Y" }}</time>
+          {% if page.categories and page.categories != empty %}
+          <span class="post-divider">/</span>
+          <span>{{ page.categories | join: ", " }}</span>
+          {% endif %}
+        </p>
+        <h1>{{ page.title }}</h1>
+      </header>
+
+      <article class="post-content">
+        {{ content }}
+      </article>
+    </main>
+  </body>
+</html>
