@@ -17,7 +17,9 @@ title: Resources
     <link rel="stylesheet" href="{{ '/style.css' | relative_url }}" />
   </head>
   <body class="archive-page">
-    {% assign ppt_files = site.static_files | where_exp: "item", "item.extname == '.ppt' or item.extname == '.pptx'" %}
+    {% assign ppt_files = site.static_files | where_exp: "item", "item.extname == '.ppt'" %}
+    {% assign pptx_files = site.static_files | where_exp: "item", "item.extname == '.pptx'" %}
+    {% assign ppt_files = ppt_files | concat: pptx_files %}
     {% assign pdf_files = site.static_files | where_exp: "item", "item.extname == '.pdf'" %}
     <main class="archive-shell">
       <header class="topbar">
