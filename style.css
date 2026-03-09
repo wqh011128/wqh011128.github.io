@@ -652,15 +652,16 @@ main {
 }
 
 .post-sidebar {
-  position: relative;
+  position: sticky;
+  top: 20px;
+  align-self: start;
+  max-height: calc(100vh - 40px);
 }
 
 .post-outline {
-  position: sticky;
-  top: 20px;
-  max-height: calc(100vh - 40px);
   display: flex;
   flex-direction: column;
+  max-height: inherit;
   padding: 20px;
   border: 1px solid var(--line);
   border-radius: 22px;
@@ -805,6 +806,50 @@ main {
   margin: 2rem 0;
 }
 
+.post-pagination {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--line);
+}
+
+.post-pagination-link {
+  display: grid;
+  gap: 0.4rem;
+  min-height: 112px;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.post-pagination-link:hover {
+  transform: translateY(-2px);
+  border-color: rgba(168, 54, 45, 0.28);
+  background: rgba(168, 54, 45, 0.04);
+}
+
+.post-pagination-link strong {
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.post-pagination-label {
+  color: var(--accent);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.post-pagination-next {
+  text-align: right;
+}
+
 @media (max-width: 980px) {
   .hero-layout,
   .archive-hero,
@@ -825,6 +870,12 @@ main {
 @media (max-width: 860px) {
   .post-layout {
     grid-template-columns: 1fr;
+  }
+
+  .post-sidebar {
+    position: static;
+    top: auto;
+    max-height: none;
   }
 
   .post-outline {
@@ -890,6 +941,14 @@ main {
   .post-stat {
     width: 100%;
     justify-content: space-between;
+  }
+
+  .post-pagination {
+    grid-template-columns: 1fr;
+  }
+
+  .post-pagination-next {
+    text-align: left;
   }
 }
 

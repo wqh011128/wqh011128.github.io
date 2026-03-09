@@ -131,6 +131,24 @@
       <div class="post-layout">
         <article class="post-content" id="post-content">
           {{ content }}
+
+          {% if page.previous or page.next %}
+          <nav class="post-pagination" aria-label="Post navigation">
+            {% if page.previous %}
+            <a class="post-pagination-link post-pagination-prev" href="{{ page.previous.url | relative_url }}">
+              <span class="post-pagination-label">上一篇</span>
+              <strong>{{ page.previous.title }}</strong>
+            </a>
+            {% endif %}
+
+            {% if page.next %}
+            <a class="post-pagination-link post-pagination-next" href="{{ page.next.url | relative_url }}">
+              <span class="post-pagination-label">下一篇</span>
+              <strong>{{ page.next.title }}</strong>
+            </a>
+            {% endif %}
+          </nav>
+          {% endif %}
         </article>
 
         <aside class="post-sidebar" aria-label="Article outline">
