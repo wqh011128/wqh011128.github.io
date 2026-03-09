@@ -58,6 +58,32 @@ function buildOutline() {
   const activeLinkById = new Map(links.map((link) => [link.dataset.target, link]));
   let activeId = "";
 
+  const keepLinkVisible = (container, link) => {
+    if (!container || !link) {
+      return;
+    }
+
+    const linkTop = link.offsetTop;
+    const linkBottom = linkTop + link.offsetHeight;
+    const viewTop = container.scrollTop;
+    const viewBottom = viewTop + container.clientHeight;
+
+    if (linkTop < viewTop) {
+      container.scrollTo({
+        top: linkTop - 8,
+        behavior: "smooth"
+      });
+      return;
+    }
+
+    if (linkBottom > viewBottom) {
+      container.scrollTo({
+        top: linkBottom - container.clientHeight + 8,
+        behavior: "smooth"
+      });
+    }
+  };
+
   const setActive = (id) => {
     if (!id || activeId === id) {
       return;
@@ -70,10 +96,7 @@ function buildOutline() {
 
     const currentLink = activeLinkById.get(id);
     if (currentLink) {
-      currentLink.scrollIntoView({
-        block: "nearest",
-        inline: "nearest"
-      });
+      keepLinkVisible(nav, currentLink);
     }
   };
 
