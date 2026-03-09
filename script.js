@@ -77,10 +77,10 @@ function revealHome(delay) {
   }, delay);
 }
 
-window.addEventListener("load", () => {
-  const quoteDuration = buildQuote();
-  window.setTimeout(() => {
-    intro.classList.add("quote-ready");
-    revealHome(quoteDuration + INTRO_HOLD_MS);
-  }, INTRO_START_DELAY_MS);
-});
+// window.addEventListener("load", () => {
+//   const quoteDuration = buildQuote();
+//   window.setTimeout(() => {
+//     intro.classList.add("quote-ready");
+//     revealHome(quoteDuration + INTRO_HOLD_MS);
+//   }, INTRO_START_DELAY_MS);
+// });
