@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Qihang Wu - AI Systems Engineer</title>
+<title>Qihang Wu - Senior AI Algorithm Engineer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link
@@ -19,15 +19,15 @@
     <span class="brand-mark">QW</span>
     <div>
       <p class="brand-name">Qihang Wu</p>
-      <p class="brand-role">AI algorithm & systems engineer</p>
+      <p class="brand-role">Senior AI algorithm engineer</p>
     </div>
   </div>
   <div class="topbar-actions">
     <nav class="topbar-links site-nav" aria-label="Primary navigation">
       <a class="active" href="#about">home</a>
-      <a href="#lens">approach</a>
-      <a href="#work">work</a>
-      <a href="#publications">papers</a>
+      <a href="#skills">skills</a>
+      <a href="#experience">experience</a>
+      <a href="#projects">projects</a>
       <a href="blog.html">blog</a>
     </nav>
     <div class="topbar-links social-links" aria-label="Social links">
@@ -40,146 +40,236 @@
 
 <section class="hero-layout" id="about">
   <div class="hero-copy">
-    <p class="eyebrow">AI Systems / Research</p>
-    <h1 class="hero-title">Designing the systems layer for large language and vision models.</h1>
-    <div class="hero-summary-stack">
-      <p>I work on distributed training, inference efficiency, and the engineering decisions that make LLM and VLM research survive hardware constraints.</p>
-      <p>Earlier work at <a href="https://ahu-spvl.github.io/" target="_blank" rel="noreferrer">AHU-SPVL</a> focused on domain adaptation and adverse scene understanding.</p>
-      <p>This homepage is intentionally narrow: selected proof points here, deeper notes and resources in the archive.</p>
+    <p class="eyebrow">Senior AI Algorithm Engineer</p>
+    <h1 class="hero-title">Turning algorithm research into performant AI systems.</h1>
+    <p class="hero-summary">
+      I build large-model training and inference systems with a focus on distributed execution, algorithm optimization, and production realism. My work combines research depth, systems judgment, and leadership-level attention to throughput, memory, and deployment trade-offs.
+    </p>
+    <div class="hero-strip" aria-label="Core areas">
+      <span>LLM / VLM engineering</span>
+      <span>Distributed computing</span>
+      <span>High-performance execution</span>
     </div>
     <div class="hero-actions">
-      <a class="primary-button" href="#work">Selected work</a>
+      <a class="primary-button" href="#projects">View projects</a>
       <a class="secondary-button" href="blog.html">Open archive</a>
     </div>
   </div>
 
-  <aside class="hero-side" aria-label="Site summary">
-    <article class="signal-panel">
-      <p class="profile-label">Site map</p>
-      <h2>Selected, not exhaustive.</h2>
-      <div class="signal-list">
-        <div class="signal-row">
-          <span class="signal-label">Current</span>
-          <p>LLM/VLM systems work around throughput, memory pressure, and deployment behavior.</p>
+  <aside class="hero-side" aria-label="Executive summary">
+    <article class="hero-panel">
+      <p class="profile-label">Executive summary</p>
+      <h2>Technical leadership with research credibility.</h2>
+      <div class="hero-metrics">
+        <div class="metric-card">
+          <span class="metric-value">2</span>
+          <span class="metric-label">selected papers</span>
         </div>
-        <div class="signal-row">
-          <span class="signal-label">Published</span>
-          <p>Two research anchors on robust scene understanding and cross-domain adaptation.</p>
+        <div class="metric-card">
+          <span class="metric-value">4</span>
+          <span class="metric-label">core engineering domains</span>
         </div>
-        <div class="signal-row">
-          <span class="signal-label">Archive</span>
-          <p>Posts, slides, and papers organized as a resource hub instead of spread across the homepage.</p>
+        <div class="metric-card">
+          <span class="metric-value">1</span>
+          <span class="metric-label">public resource archive</span>
         </div>
       </div>
-      <p class="signal-note">The homepage acts as a filter. The blog holds the full trail.</p>
+      <div class="proof-grid">
+        <div class="proof-row">
+          <span class="proof-label">Focus</span>
+          <p>Algorithm engineering for large language and vision models, from architecture choice to deployment behavior.</p>
+        </div>
+        <div class="proof-row">
+          <span class="proof-label">Strength</span>
+          <p>Balancing model quality with memory efficiency, parallelism strategy, and hardware-aware implementation detail.</p>
+        </div>
+        <div class="proof-row">
+          <span class="proof-label">Output</span>
+          <p>Peer-reviewed research, system notes, and project artifacts designed to be useful beyond a single experiment.</p>
+        </div>
+      </div>
     </article>
   </aside>
 </section>
 
-<section class="content-section" id="lens">
+<section class="content-section" id="skills">
   <div class="section-headline">
     <div>
-      <p class="section-kicker">Operating lens</p>
-      <h2>How I approach the work</h2>
+      <p class="section-kicker">Skills</p>
+      <h2>Advanced technical capability</h2>
     </div>
-    <p class="section-note">A compact view of what I tend to optimize for when moving from paper to system.</p>
+    <p class="section-note">Core strengths across frameworks, optimization, distributed execution, and high-performance systems work.</p>
   </div>
-  <div class="principles-grid">
-    <article class="principle-card">
-      <span class="principle-index">01</span>
-      <h3>Optimize under real constraints.</h3>
-      <p>Memory traffic, parallelism strategy, and serving behavior matter as much as model quality when the target is a usable system.</p>
+  <div class="skills-grid">
+    <article class="skill-card">
+      <div class="skill-head">
+        <span class="skill-icon">DL</span>
+        <span class="skill-kicker">Frameworks</span>
+      </div>
+      <h3>Deep learning fluency</h3>
+      <p>Comfortable across research iteration, benchmarking, and system-level implementation with the major training stacks.</p>
+      <ul class="skill-list">
+        <li>PyTorch</li>
+        <li>JAX / Flax</li>
+        <li>TensorFlow</li>
+      </ul>
     </article>
-    <article class="principle-card">
-      <span class="principle-index">02</span>
-      <h3>Turn research into concrete decisions.</h3>
-      <p>I value notes, experiments, and implementations that reduce the distance between a new idea and an engineering choice.</p>
+    <article class="skill-card">
+      <div class="skill-head">
+        <span class="skill-icon">OPT</span>
+        <span class="skill-kicker">Optimization</span>
+      </div>
+      <h3>Algorithm optimization</h3>
+      <p>Focus on efficient attention, memory-compute trade-offs, and implementation choices that preserve model quality while improving throughput.</p>
+      <ul class="skill-list">
+        <li>Attention efficiency</li>
+        <li>Memory-aware design</li>
+        <li>Inference optimization</li>
+      </ul>
     </article>
-    <article class="principle-card">
-      <span class="principle-index">03</span>
-      <h3>Prefer selection over inventory.</h3>
-      <p>The homepage keeps only the strongest signals. The broader trail of work lives in the archive where it can stay detailed.</p>
+    <article class="skill-card">
+      <div class="skill-head">
+        <span class="skill-icon">DST</span>
+        <span class="skill-kicker">Distributed</span>
+      </div>
+      <h3>Distributed computing</h3>
+      <p>Experience structuring workloads for scale, with attention to parallelism strategy, systems behavior, and operational clarity.</p>
+      <ul class="skill-list">
+        <li>Distributed training</li>
+        <li>Serving architecture</li>
+        <li>Parallel execution</li>
+      </ul>
+    </article>
+    <article class="skill-card">
+      <div class="skill-head">
+        <span class="skill-icon">HPC</span>
+        <span class="skill-kicker">Systems</span>
+      </div>
+      <h3>High-performance engineering</h3>
+      <p>Strong interest in the layer where hardware, profiling, and algorithm design meet practical model execution.</p>
+      <ul class="skill-list">
+        <li>JAX / TPU workflows</li>
+        <li>Performance profiling</li>
+        <li>Hardware-aware reasoning</li>
+      </ul>
     </article>
   </div>
 </section>
 
-<section class="content-section" id="work">
+<section class="content-section" id="experience">
   <div class="section-headline">
     <div>
-      <p class="section-kicker">Selected work</p>
-      <h2>Work that best represents the profile</h2>
+      <p class="section-kicker">Experience</p>
+      <h2>Roles, impact, and technical ownership</h2>
     </div>
-    <p class="section-note">One ongoing systems thread and two published research anchors.</p>
+    <p class="section-note">A concise view of the work that best reflects senior-level algorithm engineering and research execution.</p>
+  </div>
+  <div class="experience-stack">
+    <article class="experience-card">
+      <div class="experience-meta">
+        <p class="experience-period">2025 - Present</p>
+        <span class="row-tag">Current</span>
+      </div>
+      <div class="experience-body">
+        <h3>AI Systems Engineer</h3>
+        <p class="experience-summary">Owning algorithm-engineering work that makes large-model research executable at system scale.</p>
+        <ul class="experience-points">
+          <li>Drive decisions around training efficiency, inference throughput, and hardware-aware model behavior.</li>
+          <li>Translate emerging ideas in linear attention, multimodal systems, and acceleration into practical implementation paths.</li>
+          <li>Operate with a leadership mindset: reduce ambiguity, define trade-offs, and turn prototypes into repeatable engineering work.</li>
+        </ul>
+      </div>
+    </article>
+    <article class="experience-card">
+      <div class="experience-meta">
+        <p class="experience-period">2023 - 2025</p>
+        <span class="row-tag">Research</span>
+      </div>
+      <div class="experience-body">
+        <h3>Research Engineer, AHU-SPVL</h3>
+        <p class="experience-summary">Built research systems for adverse scene understanding and domain adaptive semantic segmentation.</p>
+        <ul class="experience-points">
+          <li>Contributed to peer-reviewed work including CroPe at NeurIPS 2025 and UCDS in IEEE TIP 2025.</li>
+          <li>Worked on cross-modal and cross-domain learning pipelines designed for robust performance under difficult real-world conditions.</li>
+          <li>Combined algorithm design with engineering execution so ideas could be validated through credible experiments and reusable code.</li>
+        </ul>
+      </div>
+    </article>
+    <article class="experience-card">
+      <div class="experience-meta">
+        <p class="experience-period">Ongoing</p>
+        <span class="row-tag">Archive</span>
+      </div>
+      <div class="experience-body">
+        <h3>Technical Writing and Open Research Notes</h3>
+        <p class="experience-summary">Maintain a public archive of posts, slides, and implementation notes on model systems topics.</p>
+        <ul class="experience-points">
+          <li>Break down linear attention, multimodal architectures, and JAX / TPU workflows with an emphasis on actionable engineering detail.</li>
+          <li>Use writing as a technical artifact: a way to sharpen understanding, document trade-offs, and preserve implementation insight.</li>
+          <li>Create a reference layer that complements project work without crowding the homepage.</li>
+        </ul>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section class="content-section" id="projects">
+  <div class="section-headline">
+    <div>
+      <p class="section-kicker">Projects</p>
+      <h2>Selected research and algorithm programs</h2>
+    </div>
+    <p class="section-note">A small set of projects that show both publication-grade research and systems-oriented engineering judgment.</p>
   </div>
   <div class="project-grid">
     <article class="project-card featured">
-      <span class="card-tag">Ongoing</span>
-      <h3>Model systems notes</h3>
+      <div class="project-meta">
+        <span class="card-tag">Ongoing systems program</span>
+        <span class="project-status">Research to implementation</span>
+      </div>
+      <h3>Model efficiency studies</h3>
       <p>
-        A living body of writing on linear attention, multimodal model internals, JAX/TPU practice, and implementation details that matter once theory meets hardware.
+        A structured body of work around linear attention, multimodal model internals, system behavior, and practical execution details across modern training stacks.
       </p>
+      <div class="project-tags" aria-label="Project focus areas">
+        <span>linear attention</span>
+        <span>multimodal systems</span>
+        <span>JAX / TPU</span>
+        <span>implementation notes</span>
+      </div>
+      <p class="project-outcome">Outcome: a growing archive of technical studies used as a reference for algorithm and systems decisions.</p>
       <div class="card-links">
         <a href="blog.html">resource hub</a>
       </div>
     </article>
     <article class="project-card">
-      <span class="card-tag">IEEE TIP 2025</span>
-      <h3>UCDS</h3>
-      <p>
-        A cross-domain collaborative framework for domain adaptive semantic segmentation, designed to improve pseudo-label quality and feature discrimination together.
-      </p>
-      <div class="card-links">
-        <a href="https://ieeexplore.ieee.org/document/11313775" target="_blank" rel="noreferrer">paper</a>
-        <a href="https://github.com/wqh011128/UCDS" target="_blank" rel="noreferrer">code</a>
+      <div class="project-meta">
+        <span class="card-tag">NeurIPS 2025</span>
+        <span class="project-status">Research</span>
       </div>
-    </article>
-    <article class="project-card">
-      <span class="card-tag">NeurIPS 2025</span>
       <h3>CroPe</h3>
       <p>
-        Cross-modal semantic compensation for adverse scene understanding, targeting robust semantic segmentation across rain, snow, fog, and nighttime conditions.
+        Cross-modal semantic compensation for adverse scene understanding, targeting robust segmentation across rain, snow, fog, and nighttime conditions.
       </p>
+      <p class="project-outcome">Outcome: peer-reviewed publication with paper and code artifacts.</p>
       <div class="card-links">
         <a href="https://openreview.net/pdf?id=38n8pFvldK" target="_blank" rel="noreferrer">paper</a>
         <a href="https://github.com/wqh011128/CroPe" target="_blank" rel="noreferrer">code</a>
       </div>
     </article>
-  </div>
-</section>
-
-<section class="content-section" id="publications">
-  <div class="section-headline">
-    <div>
-      <p class="section-kicker">Publications</p>
-      <h2>Selected papers</h2>
-    </div>
-    <p class="section-note">Published work in robust scene understanding and domain adaptation that still informs the systems work.</p>
-  </div>
-  <div class="publication-list">
-    <article class="publication-item">
-      <div class="publication-header">
-        <span class="publication-venue">NeurIPS 2025</span>
-        <div>
-          <h3>CroPe: Cross-Modal Semantic Compensation Adaptation for All Adverse Scene Understanding</h3>
-          <p class="publication-authors">Qin Xu, Qihang Wu, Hongtao Lu, Xiaoxia Cheng, Bo Jiang</p>
-        </div>
+    <article class="project-card">
+      <div class="project-meta">
+        <span class="card-tag">IEEE TIP 2025</span>
+        <span class="project-status">Research</span>
       </div>
-      <div class="publication-buttons">
-        <a href="https://openreview.net/pdf?id=38n8pFvldK" class="pub-button" target="_blank" rel="noreferrer">paper</a>
-        <a href="https://github.com/wqh011128/CroPe" class="pub-button" target="_blank" rel="noreferrer">code</a>
-      </div>
-    </article>
-    <article class="publication-item">
-      <div class="publication-header">
-        <span class="publication-venue">IEEE TIP 2025</span>
-        <div>
-          <h3>UCDS: Unlocking Cross-Domain Synergies for Domain Adaptive Semantic Segmentation</h3>
-          <p class="publication-authors">Qin Xu, Qihang Wu, Bo Jiang, Jiahui Wang, Yuan Chen, Jinhui Tang</p>
-        </div>
-      </div>
-      <div class="publication-buttons">
-        <a href="https://ieeexplore.ieee.org/document/11313775" class="pub-button" target="_blank" rel="noreferrer">paper</a>
-        <a href="https://github.com/wqh011128/UCDS" class="pub-button" target="_blank" rel="noreferrer">code</a>
+      <h3>UCDS</h3>
+      <p>
+        A cross-domain collaborative framework for semantic segmentation designed to improve pseudo-label quality and feature discrimination together.
+      </p>
+      <p class="project-outcome">Outcome: publication-grade research with open implementation for reproduction and extension.</p>
+      <div class="card-links">
+        <a href="https://ieeexplore.ieee.org/document/11313775" target="_blank" rel="noreferrer">paper</a>
+        <a href="https://github.com/wqh011128/UCDS" target="_blank" rel="noreferrer">code</a>
       </div>
     </article>
   </div>
@@ -188,12 +278,12 @@
 <footer class="footer-band" id="contact">
   <div>
     <p class="footer-title">Qihang Wu</p>
-    <p>AI algorithm and systems engineer working where model ideas meet training infrastructure, inference paths, and implementation tradeoffs.</p>
+    <p>Senior AI algorithm engineer focused on large-model systems, algorithm optimization, and high-performance execution.</p>
   </div>
   <div class="footer-links">
     <a href="mailto:wqh011128@163.com">wqh011128@163.com</a>
     <a href="https://github.com/wqh011128" target="_blank" rel="noreferrer">GitHub</a>
-    <a href="blog.html">Blog</a>
+    <a href="blog.html">Archive</a>
   </div>
 </footer>
 </main>
