@@ -19,49 +19,61 @@
           return;
         }
 
-        const isFence = (node, marker) =>
+        const isSkippableContainer = (node) =>
           node &&
           node.nodeType === Node.ELEMENT_NODE &&
-          node.textContent.trim() === marker &&
-          !["PRE", "CODE"].includes(node.tagName);
+          ["PRE", "CODE", "SCRIPT", "STYLE", "TEXTAREA", "MJX-CONTAINER"].includes(node.tagName);
 
-        let current = article.firstElementChild;
+        const isFence = (node) =>
+          node &&
+          node.nodeType === Node.ELEMENT_NODE &&
+          node.textContent.trim() === "$$" &&
+          !isSkippableContainer(node);
 
-        while (current) {
-          if (!isFence(current, "$$")) {
-            current = current.nextElementSibling;
-            continue;
+        const normalizeContainer = (container) => {
+          if (isSkippableContainer(container)) {
+            return;
           }
 
-          const start = current;
-          const parts = [];
-          let cursor = current.nextElementSibling;
+          let current = container.firstElementChild;
 
-          while (cursor && !isFence(cursor, "$$")) {
-            parts.push(cursor.textContent.trim());
-            cursor = cursor.nextElementSibling;
+          while (current) {
+            if (isFence(current)) {
+              const start = current;
+              const parts = [];
+              let cursor = current.nextElementSibling;
+
+              while (cursor && !isFence(cursor)) {
+                parts.push(cursor.textContent.trim());
+                cursor = cursor.nextElementSibling;
+              }
+
+              if (cursor) {
+                const mathBlock = document.createElement("div");
+                mathBlock.textContent = `$$\n${parts.join("\n")}\n$$`;
+
+                const insertBefore = cursor.nextElementSibling;
+                let node = start;
+
+                while (node && node !== insertBefore) {
+                  const next = node.nextElementSibling;
+                  node.remove();
+                  node = next;
+                }
+
+                container.insertBefore(mathBlock, insertBefore);
+                current = mathBlock.nextElementSibling;
+                continue;
+              }
+            }
+
+            const next = current.nextElementSibling;
+            normalizeContainer(current);
+            current = next;
           }
+        };
 
-          if (!cursor) {
-            current = current.nextElementSibling;
-            continue;
-          }
-
-          const mathBlock = document.createElement("div");
-          mathBlock.textContent = `$$\n${parts.join("\n")}\n$$`;
-
-          const insertBefore = cursor.nextElementSibling;
-          let node = start;
-
-          while (node && node !== insertBefore) {
-            const next = node.nextElementSibling;
-            node.remove();
-            node = next;
-          }
-
-          article.insertBefore(mathBlock, insertBefore);
-          current = mathBlock.nextElementSibling;
-        }
+        normalizeContainer(article);
       }
 
       window.MathJax = {
