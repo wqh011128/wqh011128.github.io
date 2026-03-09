@@ -230,6 +230,7 @@ def generate_mark_config(yaml_config_path, tag):
         space = rule.get("space", default_space)
         source_path = rule["path"]
         parent_id = rule.get("parent_id")
+        rule_version = str(rule.get("version", "")).strip() or tag
 
         if not os.path.exists(source_path):
             print(f"Checking: {source_path} ... NOT FOUND (Skipping)")
@@ -244,7 +245,9 @@ def generate_mark_config(yaml_config_path, tag):
             "path": source_path,
             "space": space,
             "parent": parent_title,
+            "version": rule_version,
         }
+        print(f"Checking: {source_path} ... READY (version={rule_version})")
         pages_to_sync.append(page_entry)
 
     if not pages_to_sync:
@@ -253,13 +256,14 @@ def generate_mark_config(yaml_config_path, tag):
     return pages_to_sync
 
 
-def append_version(page, tag):
+def append_version(page):
     path = page["path"]
     dir_path = os.path.dirname(path)
     filename = os.path.basename(path)
     filename = os.path.splitext(filename)[0]  # 去掉 .md
+    version_suffix = page["version"]
 
-    version = f"<!-- Title: {filename}_{tag} -->\n"
+    version = f"<!-- Title: {filename}_{version_suffix} -->\n"
     with open(path, "r", encoding="utf-8") as handle:
         original_content = handle.read()
 
@@ -276,7 +280,7 @@ def append_version(page, tag):
         temp_file_path = temp_file.name
 
     page["path"] = temp_file_path
-    page["title"] = f"{filename}_{tag}"
+    page["title"] = f"{filename}_{version_suffix}"
     return page, filename
 
 
@@ -351,7 +355,7 @@ def main():
     pages_to_sync = generate_mark_config(args.config, args.tag)
     if pages_to_sync:
         for page in pages_to_sync:
-            newpage, _title = append_version(page, args.tag)
+            newpage, _title = append_version(page)
             run_mark_tool(newpage)
             landing_page = update_landing_page(page, newpage)
             run_mark_tool(landing_page)
