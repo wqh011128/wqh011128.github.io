@@ -91,6 +91,24 @@ main {
   padding: 0 0 88px;
 }
 
+.home-page main {
+  position: relative;
+}
+
+.home-page main::before {
+  content: "";
+  position: absolute;
+  top: 76px;
+  right: -80px;
+  width: 360px;
+  height: 360px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(212, 164, 78, 0.16) 0%, rgba(212, 164, 78, 0.05) 36%, transparent 70%);
+  filter: blur(6px);
+  pointer-events: none;
+}
+
 .topbar {
   display: flex;
   align-items: center;
@@ -98,6 +116,14 @@ main {
   gap: 24px;
   padding: 24px 0 18px;
   border-bottom: 1px solid var(--line);
+}
+
+.home-page .topbar {
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  backdrop-filter: blur(18px);
+  background: linear-gradient(180deg, rgba(7, 17, 29, 0.88) 0%, rgba(7, 17, 29, 0.68) 100%);
 }
 
 .topbar-brand {
@@ -201,6 +227,184 @@ main {
   gap: 20px;
   align-items: stretch;
   padding: 54px 0 14px;
+}
+
+.hero-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1.24fr) minmax(340px, 0.9fr);
+  gap: 20px;
+  align-items: stretch;
+  padding: 58px 0 0;
+}
+
+.hero-main,
+.hero-console-card,
+.hero-mini-card,
+.signal-card {
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(16px);
+}
+
+.hero-main,
+.hero-console-card,
+.signal-card {
+  border-radius: 28px;
+}
+
+.hero-main {
+  position: relative;
+  overflow: hidden;
+  padding: 44px 42px 40px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(212, 164, 78, 0.15), transparent 24%),
+    linear-gradient(145deg, rgba(14, 28, 46, 0.97) 0%, rgba(11, 22, 36, 0.96) 48%, rgba(26, 21, 12, 0.92) 100%);
+}
+
+.hero-main::after {
+  content: "";
+  position: absolute;
+  right: 28px;
+  bottom: 26px;
+  width: 130px;
+  height: 130px;
+  border-radius: 22px;
+  border: 1px solid rgba(212, 164, 78, 0.16);
+  background:
+    linear-gradient(135deg, rgba(212, 164, 78, 0.06), rgba(255, 255, 255, 0.02));
+  transform: rotate(16deg);
+  pointer-events: none;
+}
+
+.hero-pretitle,
+.mini-label,
+.signal-index {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+.hero-pretitle {
+  margin: 0 0 1rem;
+  color: var(--text-faint);
+  font-size: 0.84rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.hero-main .hero-title {
+  max-width: 11ch;
+}
+
+.hero-main .hero-summary {
+  max-width: 56ch;
+  margin-top: 1.35rem;
+  font-size: 1.02rem;
+}
+
+.hero-console {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+.hero-console-card {
+  padding: 26px;
+  background:
+    linear-gradient(180deg, rgba(18, 34, 53, 0.94) 0%, rgba(9, 18, 31, 0.94) 100%);
+}
+
+.hero-console-feature h2 {
+  margin: 0;
+  max-width: 12ch;
+  font-size: 1.95rem;
+  line-height: 1;
+  letter-spacing: -0.06em;
+}
+
+.hero-console-feature p {
+  margin: 1rem 0 0;
+  color: var(--text-faint);
+}
+
+.hero-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.hero-mini-card {
+  min-height: 152px;
+  padding: 18px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(15, 29, 47, 0.9) 0%, rgba(8, 16, 27, 0.92) 100%);
+}
+
+.mini-label {
+  display: inline-block;
+  margin-bottom: 0.75rem;
+  color: var(--accent-strong);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.hero-mini-card strong {
+  display: block;
+  font-size: 1rem;
+  line-height: 1.32;
+}
+
+.hero-mini-card p {
+  margin: 0.65rem 0 0;
+  color: var(--text-faint);
+  font-size: 0.92rem;
+}
+
+.signal-band {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.signal-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 220px;
+  padding: 24px;
+  background: linear-gradient(180deg, rgba(13, 26, 44, 0.88) 0%, rgba(8, 16, 27, 0.94) 100%);
+}
+
+.signal-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(212, 164, 78, 0.7), transparent 70%);
+}
+
+.signal-index {
+  display: block;
+  color: rgba(240, 199, 115, 0.65);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.signal-card h2 {
+  margin: 1rem 0 0;
+  max-width: 10ch;
+  font-size: 1.45rem;
+  line-height: 1.02;
+  letter-spacing: -0.05em;
+}
+
+.signal-card p {
+  margin: 0.85rem 0 0;
+  color: var(--text-faint);
 }
 
 .hero-copy,
@@ -1074,15 +1278,21 @@ main {
 }
 
 @media (max-width: 980px) {
+  .hero-stage,
   .hero-layout,
   .archive-hero,
   .resource-columns,
-  .project-grid {
+  .project-grid,
+  .signal-band {
     grid-template-columns: 1fr;
   }
 
   .project-card.featured {
     grid-column: auto;
+  }
+
+  .hero-mini-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .hero-title {
@@ -1128,6 +1338,10 @@ main {
   }
 
   .hero-copy,
+  .hero-main,
+  .hero-console-card,
+  .hero-mini-card,
+  .signal-card,
   .hero-panel,
   .skill-card,
   .experience-card,
@@ -1151,7 +1365,8 @@ main {
   }
 
   .skills-grid,
-  .hero-metrics {
+  .hero-metrics,
+  .hero-mini-grid {
     grid-template-columns: 1fr;
   }
 
