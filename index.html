@@ -1,308 +1,129 @@
+---
+layout: default
+title: Home
+---
 <!doctype html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Qihang Wu - Senior AI Algorithm Engineer</title>
+<title>{{ site.title }} - AI Systems Engineer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link
   href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;700&display=swap"
   rel="stylesheet"
 />
-<link rel="stylesheet" href="style.css" />
+<link rel="stylesheet" href="{{ '/style.css' | relative_url }}" />
 </head>
 <body class="home-page">
-<main id="home">
-<header class="topbar">
-  <div class="topbar-brand">
-    <span class="brand-mark">QW</span>
-    <div>
-      <p class="brand-name">Qihang Wu</p>
-      <p class="brand-role">Senior AI algorithm engineer</p>
-    </div>
-  </div>
-  <div class="topbar-actions">
-    <nav class="topbar-links site-nav" aria-label="Primary navigation">
-      <a class="active" href="#about">home</a>
-      <a href="#skills">skills</a>
-      <a href="#experience">experience</a>
-      <a href="#projects">projects</a>
-      <a href="blog.html">blog</a>
+<main class="home-shell">
+  <header class="home-nav" aria-label="Site header">
+    <a class="home-brand" href="{{ '/' | relative_url }}">
+      <span class="home-mark">QW</span>
+      <span>Qihang Wu</span>
+    </a>
+    <nav class="home-links" aria-label="Primary navigation">
+      <a href="#work">Work</a>
+      <a href="#notes">Blog</a>
+      <a href="mailto:{{ site.email }}">Email</a>
+      <a href="https://github.com/{{ site.github_username }}" target="_blank" rel="noreferrer">GitHub</a>
     </nav>
-    <div class="topbar-links social-links" aria-label="Social links">
-      <a href="mailto:wqh011128@163.com">mail</a>
-      <a href="https://github.com/wqh011128" target="_blank" rel="noreferrer">github</a>
-      <a href="feed.xml">rss</a>
-    </div>
-  </div>
-</header>
+  </header>
 
-<section class="hero-stage" id="about">
-  <div class="hero-main">
-    <p class="eyebrow">Large-model systems / research execution</p>
-    <p class="hero-pretitle">AI systems engineer · multimodal · distributed execution</p>
-    <h1 class="hero-title">Building model systems that survive contact with hardware.</h1>
-    <p class="hero-summary">
-      I work where algorithm ideas become training systems, inference paths, and production trade-offs that can actually hold up under scale, memory pressure, and deployment constraints.
-    </p>
-    <div class="hero-actions">
-      <a class="primary-button" href="#projects">View projects</a>
-      <a class="secondary-button" href="blog.html">Open archive</a>
-    </div>
-    <div class="hero-strip" aria-label="Core areas">
-      <span>LLM / VLM systems</span>
-      <span>Throughput and memory</span>
-      <span>Distributed training</span>
-      <span>Inference realism</span>
-    </div>
-  </div>
-
-  <aside class="hero-console" aria-label="Homepage signals">
-    <article class="hero-console-card hero-console-feature">
-      <p class="profile-label">Current lens</p>
-      <h2>Research credibility, systems judgment, and public technical artifacts.</h2>
-      <p>
-        The homepage now aims to show signal first: what I build, how I operate, and where the strongest work lives.
+  <section class="home-hero" id="about">
+    <div class="home-intro">
+      <p class="home-kicker">AI systems / model efficiency / technical notes</p>
+      <h1>Building large-model systems with a researcher's eye and an engineer's patience.</h1>
+      <p class="home-summary">
+        I focus on LLM and VLM training and inference systems, especially the practical layer where algorithms,
+        hardware constraints, memory behavior, and deployment decisions meet.
       </p>
+      <div class="home-actions">
+        <a class="home-button primary" href="#notes">Read the blog</a>
+        <a class="home-button" href="#work">Selected work</a>
+      </div>
+    </div>
+
+    <aside class="home-profile" aria-label="Profile snapshot">
+      <img src="{{ '/img/me.jpg' | relative_url }}" alt="Qihang Wu walking on a sunlit path" />
+      <div class="home-profile-copy">
+        <p>Currently interested in model execution, efficient attention, multimodal systems, and the habit of turning notes into reusable engineering memory.</p>
+      </div>
+    </aside>
+  </section>
+
+  <section class="home-section home-snapshot" aria-label="Key information">
+    <article>
+      <span>Focus</span>
+      <strong>LLM / VLM systems</strong>
+      <p>Training and inference paths that respect throughput, memory, and deployment constraints.</p>
     </article>
-    <div class="hero-mini-grid">
-      <article class="hero-mini-card">
-        <span class="mini-label">Published</span>
-        <strong>NeurIPS 2025 · TIP 2025</strong>
-        <p>Peer-reviewed work with implementation grounding.</p>
+    <article>
+      <span>Research</span>
+      <strong>NeurIPS 2025 / TIP 2025</strong>
+      <p>Earlier work in adverse-scene understanding and domain-adaptive semantic segmentation.</p>
+    </article>
+    <article>
+      <span>Archive</span>
+      <strong>{{ site.posts | size }} technical posts</strong>
+      <p>Notes on attention, multimodal architecture, JAX / TPU workflows, Git, and RL.</p>
+    </article>
+  </section>
+
+  <section class="home-section" id="work">
+    <div class="home-section-head">
+      <p class="home-kicker">Selected work</p>
+      <h2>Enough context to know what I care about.</h2>
+    </div>
+    <div class="home-work-grid">
+      <article class="home-card wide">
+        <p class="home-card-label">Ongoing thread</p>
+        <h3>Model efficiency studies</h3>
+        <p>
+          Public notes around linear attention, multimodal model internals, JAX / TPU practice,
+          and the implementation details that decide whether an idea is useful at scale.
+        </p>
+        <a href="{{ '/blog.html' | relative_url }}">Open archive</a>
       </article>
-      <article class="hero-mini-card">
-        <span class="mini-label">System focus</span>
-        <strong>Training to deployment</strong>
-        <p>Attention to throughput, memory, and scaling behavior.</p>
+      <article class="home-card">
+        <p class="home-card-label">NeurIPS 2025</p>
+        <h3>CroPe</h3>
+        <p>Cross-modal semantic compensation for robust adverse-scene understanding.</p>
+        <a href="https://github.com/wqh011128/CroPe" target="_blank" rel="noreferrer">Code</a>
       </article>
-      <article class="hero-mini-card">
-        <span class="mini-label">Public archive</span>
-        <strong>Notes as engineering assets</strong>
-        <p>Posts and breakdowns that stay useful after the experiment ends.</p>
-      </article>
-      <article class="hero-mini-card">
-        <span class="mini-label">Operating style</span>
-        <strong>Research translated into execution</strong>
-        <p>Less speculation, more repeatable engineering decisions.</p>
+      <article class="home-card">
+        <p class="home-card-label">IEEE TIP 2025</p>
+        <h3>UCDS</h3>
+        <p>Cross-domain collaboration for semantic segmentation with stronger pseudo-label quality.</p>
+        <a href="https://github.com/wqh011128/UCDS" target="_blank" rel="noreferrer">Code</a>
       </article>
     </div>
-  </aside>
-</section>
+  </section>
 
-<section class="signal-band" aria-label="Core homepage signals">
-  <article class="signal-card">
-    <span class="signal-index">01</span>
-    <h2>Model systems</h2>
-    <p>Large-model training and inference work shaped by hardware and deployment constraints, not just offline benchmarks.</p>
-  </article>
-  <article class="signal-card">
-    <span class="signal-index">02</span>
-    <h2>Algorithm engineering</h2>
-    <p>Strongest at the layer where architecture choice, optimization strategy, and implementation details start to interact.</p>
-  </article>
-  <article class="signal-card">
-    <span class="signal-index">03</span>
-    <h2>Technical writing</h2>
-    <p>A living archive of notes, system studies, and breakdowns designed to outlast a single project cycle.</p>
-  </article>
-</section>
-
-<section class="content-section" id="skills">
-  <div class="section-headline">
-    <div>
-      <p class="section-kicker">Capabilities</p>
-      <h2>Where I create the most leverage</h2>
+  <section class="home-section" id="notes">
+    <div class="home-section-head">
+      <p class="home-kicker">Blog</p>
+      <h2>Recent notes</h2>
     </div>
-    <p class="section-note">Compressed into four areas so the page reads like a point of view, not a long-form CV.</p>
-  </div>
-  <div class="skills-grid">
-    <article class="skill-card">
-      <div class="skill-head">
-        <span class="skill-icon">SYS</span>
-        <span class="skill-kicker">Model systems</span>
-      </div>
-      <h3>Research that can actually run</h3>
-      <p>Turning model ideas into training and inference paths with clear resource trade-offs and execution behavior.</p>
-      <ul class="skill-list">
-        <li>LLM / VLM execution paths</li>
-        <li>Training and serving trade-offs</li>
-        <li>Deployment-aware system choices</li>
-      </ul>
-    </article>
-    <article class="skill-card">
-      <div class="skill-head">
-        <span class="skill-icon">OPT</span>
-        <span class="skill-kicker">Optimization</span>
-      </div>
-      <h3>Efficiency without hand-waving</h3>
-      <p>Focused on attention efficiency, memory pressure, and the implementation details that decide whether an idea is practical.</p>
-      <ul class="skill-list">
-        <li>Attention efficiency</li>
-        <li>Memory-compute balance</li>
-        <li>Profiling-led optimization</li>
-      </ul>
-    </article>
-    <article class="skill-card">
-      <div class="skill-head">
-        <span class="skill-icon">DST</span>
-        <span class="skill-kicker">Distributed</span>
-      </div>
-      <h3>Scale with structure</h3>
-      <p>Experience shaping workloads for distributed training and serving with attention to parallelism strategy and operational clarity.</p>
-      <ul class="skill-list">
-        <li>Distributed training</li>
-        <li>Parallel execution strategy</li>
-        <li>Serving architecture</li>
-      </ul>
-    </article>
-    <article class="skill-card">
-      <div class="skill-head">
-        <span class="skill-icon">ARC</span>
-        <span class="skill-kicker">Artifacts</span>
-      </div>
-      <h3>Reusable technical output</h3>
-      <p>Notes, papers, and breakdowns built as working references rather than one-off project summaries.</p>
-      <ul class="skill-list">
-        <li>Research papers and code</li>
-        <li>System studies and notes</li>
-        <li>Public technical archive</li>
-      </ul>
-    </article>
-  </div>
-</section>
-
-<section class="content-section" id="experience">
-  <div class="section-headline">
-    <div>
-      <p class="section-kicker">Trajectory</p>
-      <h2>Roles that shaped the way I build</h2>
+    <div class="home-post-list">
+      {% for post in site.posts limit:5 %}
+      <a class="home-post" href="{{ post.url | relative_url }}">
+        <time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: "%Y.%m.%d" }}</time>
+        <span>{{ post.title }}</span>
+      </a>
+      {% endfor %}
     </div>
-    <p class="section-note">Shorter, sharper, and focused on how each role changed the technical lens.</p>
-  </div>
-  <div class="experience-stack">
-    <article class="experience-card">
-      <div class="experience-meta">
-        <p class="experience-period">2025 - Present</p>
-        <span class="row-tag">Current</span>
-      </div>
-      <div class="experience-body">
-        <h3>AI Systems Engineer</h3>
-        <p class="experience-summary">Owning the layer where large-model ideas meet system constraints and deployment reality.</p>
-        <ul class="experience-points">
-          <li>Drive decisions around throughput, memory behavior, and hardware-aware model execution.</li>
-          <li>Translate new ideas in multimodal systems and acceleration into practical implementation paths.</li>
-          <li>Reduce ambiguity so prototypes can become repeatable engineering work.</li>
-        </ul>
-      </div>
-    </article>
-    <article class="experience-card">
-      <div class="experience-meta">
-        <p class="experience-period">2023 - 2025</p>
-        <span class="row-tag">Research</span>
-      </div>
-      <div class="experience-body">
-        <h3>Research Engineer, AHU-SPVL</h3>
-        <p class="experience-summary">Built research systems for adverse scene understanding and domain-adaptive semantic segmentation.</p>
-        <ul class="experience-points">
-          <li>Contributed to CroPe at NeurIPS 2025 and UCDS in IEEE TIP 2025.</li>
-          <li>Worked on cross-modal and cross-domain pipelines for difficult real-world conditions.</li>
-          <li>Built experiments and code with reuse in mind, not just paper deadlines.</li>
-        </ul>
-      </div>
-    </article>
-    <article class="experience-card">
-      <div class="experience-meta">
-        <p class="experience-period">Ongoing</p>
-        <span class="row-tag">Archive</span>
-      </div>
-      <div class="experience-body">
-        <h3>Technical Writing and Open Research Notes</h3>
-        <p class="experience-summary">Maintain a public archive of posts, slides, and implementation notes across model systems topics.</p>
-        <ul class="experience-points">
-          <li>Break down linear attention, multimodal architectures, and JAX / TPU workflows.</li>
-          <li>Use writing to preserve trade-offs, implementation insight, and reasoning paths.</li>
-          <li>Keep the homepage focused by moving depth into the archive.</li>
-        </ul>
-      </div>
-    </article>
-  </div>
-</section>
+    <a class="home-text-link" href="{{ '/blog.html' | relative_url }}">View all posts and resources</a>
+  </section>
 
-<section class="content-section" id="projects">
-  <div class="section-headline">
-    <div>
-      <p class="section-kicker">Selected work</p>
-      <h2>Projects with both technical depth and visible output</h2>
+  <footer class="home-footer">
+    <p>{{ site.description }}</p>
+    <div class="home-links">
+      <a href="mailto:{{ site.email }}">{{ site.email }}</a>
+      <a href="{{ '/feed.xml' | relative_url }}">RSS</a>
     </div>
-    <p class="section-note">Three entries are enough here: one ongoing systems thread, two publication-backed research efforts.</p>
-  </div>
-  <div class="project-grid">
-    <article class="project-card featured">
-      <div class="project-meta">
-        <span class="card-tag">Ongoing systems thread</span>
-        <span class="project-status">Research to implementation</span>
-      </div>
-      <h3>Model efficiency studies</h3>
-      <p>
-        A growing body of work around linear attention, multimodal internals, system behavior, and practical execution details across modern training stacks.
-      </p>
-      <div class="project-tags" aria-label="Project focus areas">
-        <span>linear attention</span>
-        <span>multimodal systems</span>
-        <span>JAX / TPU</span>
-        <span>implementation notes</span>
-      </div>
-      <p class="project-outcome">Outcome: technical studies that function as a decision layer for future system work.</p>
-      <div class="card-links">
-        <a href="blog.html">resource hub</a>
-      </div>
-    </article>
-    <article class="project-card">
-      <div class="project-meta">
-        <span class="card-tag">NeurIPS 2025</span>
-        <span class="project-status">Research</span>
-      </div>
-      <h3>CroPe</h3>
-      <p>
-        Cross-modal semantic compensation for adverse scene understanding, targeting robust segmentation across rain, snow, fog, and nighttime conditions.
-      </p>
-      <p class="project-outcome">Outcome: NeurIPS 2025 publication with paper and code.</p>
-      <div class="card-links">
-        <a href="https://openreview.net/pdf?id=38n8pFvldK" target="_blank" rel="noreferrer">paper</a>
-        <a href="https://github.com/wqh011128/CroPe" target="_blank" rel="noreferrer">code</a>
-      </div>
-    </article>
-    <article class="project-card">
-      <div class="project-meta">
-        <span class="card-tag">IEEE TIP 2025</span>
-        <span class="project-status">Research</span>
-      </div>
-      <h3>UCDS</h3>
-      <p>
-        A cross-domain collaborative framework for semantic segmentation designed to improve pseudo-label quality and feature discrimination together.
-      </p>
-      <p class="project-outcome">Outcome: IEEE TIP 2025 paper with open implementation.</p>
-      <div class="card-links">
-        <a href="https://ieeexplore.ieee.org/document/11313775" target="_blank" rel="noreferrer">paper</a>
-        <a href="https://github.com/wqh011128/UCDS" target="_blank" rel="noreferrer">code</a>
-      </div>
-    </article>
-  </div>
-</section>
-
-<footer class="footer-band" id="contact">
-  <div>
-    <p class="footer-title">Qihang Wu</p>
-    <p>Senior AI algorithm engineer focused on large-model systems, algorithm optimization, and execution that holds up in practice.</p>
-  </div>
-  <div class="footer-links">
-    <a href="mailto:wqh011128@163.com">wqh011128@163.com</a>
-    <a href="https://github.com/wqh011128" target="_blank" rel="noreferrer">GitHub</a>
-    <a href="blog.html">Archive</a>
-  </div>
-</footer>
+  </footer>
 </main>
 </body>
 </html>
