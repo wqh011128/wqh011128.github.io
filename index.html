@@ -39,6 +39,11 @@ title: Home
         I focus on LLM and VLM training and inference systems, especially the practical layer where algorithms,
         hardware constraints, memory behavior, and deployment decisions meet.
       </p>
+      <div class="home-proof" aria-label="Credibility signals">
+        <span>NeurIPS 2025</span>
+        <span>IEEE TIP 2025</span>
+        <span>{{ site.posts | size }} technical notes</span>
+      </div>
       <div class="home-actions">
         <a class="home-button primary" href="#notes">Read the blog</a>
         <a class="home-button" href="#work">Selected work</a>
@@ -84,6 +89,11 @@ title: Home
           Public notes around linear attention, multimodal model internals, JAX / TPU practice,
           and the implementation details that decide whether an idea is useful at scale.
         </p>
+        <div class="home-card-proof">
+          <span>systems notes</span>
+          <span>implementation traces</span>
+          <span>architecture reading</span>
+        </div>
         <a href="{{ '/blog.html' | relative_url }}">Open archive</a>
       </article>
       <article class="home-card">
@@ -103,8 +113,11 @@ title: Home
 
   <section class="home-section" id="notes">
     <div class="home-section-head">
-      <p class="home-kicker">Blog</p>
-      <h2>Recent notes</h2>
+      <div>
+        <p class="home-kicker">Blog</p>
+        <h2>Recent notes</h2>
+      </div>
+      <p class="home-section-note">Long-form notes on model internals, training systems, Git workflows, RL, and multimodal architecture.</p>
     </div>
     <div class="home-post-list">
       {% for post in site.posts limit:5 %}

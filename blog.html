@@ -35,8 +35,8 @@ title: Resources
           <nav class="topbar-links site-nav" aria-label="Primary navigation">
             <a href="{{ '/' | relative_url }}">home</a>
             <a class="active" href="{{ '/blog.html' | relative_url }}">blog</a>
+            <a href="#start-here">start here</a>
             <a href="#markdown-resources">posts</a>
-            <a href="#document-resources">documents</a>
           </nav>
           <div class="topbar-links social-links" aria-label="Social links">
             <a href="mailto:wqh011128@163.com">mail</a>
@@ -72,6 +72,40 @@ title: Resources
         </div>
       </section>
 
+      <section class="archive-section archive-featured" id="start-here">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">Start here</p>
+            <h2>Guided entry points</h2>
+          </div>
+          <p class="section-note">A smaller front door before the full chronological archive.</p>
+        </div>
+
+        {% assign latest_post = site.posts | first %}
+        <div class="archive-feature-grid">
+          {% if latest_post %}
+          <a class="archive-feature-main" href="{{ latest_post.url | relative_url }}">
+            <span class="resource-badge">latest</span>
+            <h3>{{ latest_post.title }}</h3>
+            <p>{{ latest_post.date | date: "%B %d, %Y" }}</p>
+          </a>
+          {% endif %}
+
+          <div class="archive-guide-list">
+            <a class="archive-guide-card" href="{{ '/blog.html#markdown-resources' | relative_url }}">
+              <span>Writing</span>
+              <strong>Technical posts</strong>
+              <p>Model systems, attention, multimodal architecture, RL, Git, and engineering notes.</p>
+            </a>
+            <a class="archive-guide-card" href="{{ '/blog.html#document-resources' | relative_url }}">
+              <span>Documents</span>
+              <strong>Papers and slides</strong>
+              <p>Static PDF, PPT, and PPTX resources grouped below for quick retrieval.</p>
+            </a>
+          </div>
+        </div>
+      </section>
+
       <section class="archive-section" id="markdown-resources">
         <div class="section-heading">
           <div>
@@ -96,9 +130,9 @@ title: Resources
         <div class="section-heading">
           <div>
             <p class="section-kicker">Category 02</p>
-            <h2>Documents</h2>
+            <h2>Papers, slides, and documents</h2>
           </div>
-          <p class="section-note">Slides and papers exposed directly as static files.</p>
+          <p class="section-note">Grouped by file type for now; filenames carry the topic labels.</p>
         </div>
 
         <div class="resource-columns">
