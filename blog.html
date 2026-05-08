@@ -49,10 +49,10 @@ title: Resources
       <section class="archive-hero">
         <div class="archive-copy">
           <p class="eyebrow">Resource hub</p>
-          <h1>Writing, slides, and papers collected in one place.</h1>
+          <h1>Technical archive with a reading map.</h1>
           <p class="archive-summary">
-            This page aggregates posts from <code>_posts</code> together with static PPT, PPTX,
-            and PDF assets so the homepage can stay focused on identity and selected work.
+            A focused index for long-form Markdown notes, slides, and papers. Start with the guided cards,
+            then use the chronological list when you already know what you are looking for.
           </p>
         </div>
 
@@ -76,9 +76,9 @@ title: Resources
         <div class="section-heading">
           <div>
             <p class="section-kicker">Start here</p>
-            <h2>Guided entry points</h2>
+            <h2>Reading map</h2>
           </div>
-          <p class="section-note">A smaller front door before the full chronological archive.</p>
+          <p class="section-note">A curated layer before the full archive, tuned for technical scanning.</p>
         </div>
 
         {% assign latest_post = site.posts | first %}
@@ -94,8 +94,8 @@ title: Resources
           <div class="archive-guide-list">
             <a class="archive-guide-card" href="{{ '/blog.html#markdown-resources' | relative_url }}">
               <span>Writing</span>
-              <strong>Technical posts</strong>
-              <p>Model systems, attention, multimodal architecture, RL, Git, and engineering notes.</p>
+              <strong>Model systems notes</strong>
+              <p>Attention, multimodal architecture, JAX / TPU workflows, RL, and engineering traces.</p>
             </a>
             <a class="archive-guide-card" href="{{ '/blog.html#document-resources' | relative_url }}">
               <span>Documents</span>
@@ -103,6 +103,30 @@ title: Resources
               <p>Static PDF, PPT, and PPTX resources grouped below for quick retrieval.</p>
             </a>
           </div>
+        </div>
+      </section>
+
+      <section class="archive-section archive-radar" aria-label="Archive topic map">
+        <div class="archive-radar-head">
+          <p class="section-kicker">Topic radar</p>
+          <p>Use these lanes as mental folders for the archive. The files remain chronological; the map gives them shape.</p>
+        </div>
+        <div class="archive-topic-grid">
+          <a class="archive-topic-card" href="#markdown-resources">
+            <span>01</span>
+            <strong>LLM / VLM internals</strong>
+            <p>Architecture reading, multimodal prompts, attention variants, and inference behavior.</p>
+          </a>
+          <a class="archive-topic-card" href="#markdown-resources">
+            <span>02</span>
+            <strong>Training systems</strong>
+            <p>JAX, TPU, distributed execution, memory tradeoffs, and debugging notes.</p>
+          </a>
+          <a class="archive-topic-card" href="#markdown-resources">
+            <span>03</span>
+            <strong>Research summaries</strong>
+            <p>RLHF, PPO, DPO, linear attention, paper notes, and reusable concept maps.</p>
+          </a>
         </div>
       </section>
 
@@ -119,7 +143,10 @@ title: Resources
           {% for post in site.posts %}
           <a class="list-row archive-row" href="{{ post.url | relative_url }}">
             <span class="list-date">{{ post.date | date: "%b %d, %Y" }}</span>
-            <span class="list-title">{{ post.title }}</span>
+            <span class="list-title-wrap">
+              <span class="list-title">{{ post.title }}</span>
+              <span class="list-subtitle">Markdown note / {{ post.date | date: "%Y" }}</span>
+            </span>
             <span class="row-tag">md</span>
           </a>
           {% endfor %}
