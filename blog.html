@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Resources
+title: Notes
 ---
 <!doctype html>
 <html lang="en">
@@ -11,191 +11,117 @@ title: Resources
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="{{ '/style.css' | relative_url }}" />
   </head>
-  <body class="archive-page">
+  <body class="site-page archive-page">
     {% assign ppt_files = site.static_files | where_exp: "item", "item.extname == '.ppt'" %}
     {% assign pptx_files = site.static_files | where_exp: "item", "item.extname == '.pptx'" %}
     {% assign ppt_files = ppt_files | concat: pptx_files %}
     {% assign pdf_files = site.static_files | where_exp: "item", "item.extname == '.pdf'" %}
-    <main class="archive-shell">
-      <header class="topbar">
-        <div class="topbar-brand">
-          <span class="brand-mark">QW</span>
-          <div>
-            <p class="brand-name">Qihang Wu</p>
-            <p class="brand-role">Notes, posts, and static resources</p>
-          </div>
-        </div>
-
-        <div class="topbar-actions">
-          <nav class="topbar-links site-nav" aria-label="Primary navigation">
-            <a href="{{ '/' | relative_url }}">home</a>
-            <a class="active" href="{{ '/blog.html' | relative_url }}">blog</a>
-            <a href="#start-here">start here</a>
-            <a href="#markdown-resources">posts</a>
-          </nav>
-          <div class="topbar-links social-links" aria-label="Social links">
-            <a href="mailto:wqh011128@163.com">mail</a>
-            <a href="https://github.com/wqh011128" target="_blank" rel="noreferrer">github</a>
-            <a href="{{ '/feed.xml' | relative_url }}">rss</a>
-          </div>
-        </div>
+    <main class="site-shell archive-shell">
+      <header class="site-header" aria-label="Site header">
+        <a class="site-brand" href="{{ '/' | relative_url }}">Qihang Wu</a>
+        <nav class="site-nav" aria-label="Primary navigation">
+          <a href="{{ '/' | relative_url }}">Home</a>
+          <a class="active" href="{{ '/blog.html' | relative_url }}">Notes</a>
+          <a href="#documents">Documents</a>
+          <a href="mailto:{{ site.email }}">Email</a>
+        </nav>
       </header>
 
       <section class="archive-hero">
-        <div class="archive-copy">
-          <p class="eyebrow">Resource hub</p>
-          <h1>Technical archive with a reading map.</h1>
-          <p class="archive-summary">
-            A focused index for long-form Markdown notes, slides, and papers. Start with the guided cards,
-            then use the chronological list when you already know what you are looking for.
-          </p>
+        <div>
+          <p class="eyebrow">Technical archive</p>
+          <h1>Notes, papers, and working references.</h1>
         </div>
-
-        <div class="archive-stats" aria-label="Resource counts">
-          <article class="stat-card">
-            <span class="stat-value">{{ site.posts | size }}</span>
-            <span class="stat-label">Markdown posts</span>
-          </article>
-          <article class="stat-card">
-            <span class="stat-value">{{ ppt_files | size }}</span>
-            <span class="stat-label">PPT files</span>
-          </article>
-          <article class="stat-card">
-            <span class="stat-value">{{ pdf_files | size }}</span>
-            <span class="stat-label">PDF files</span>
-          </article>
-        </div>
+        <p>
+          A compact index of long-form Markdown notes and static resources. Most entries are written as study notes:
+          formulas, code paths, implementation details, and the parts worth revisiting.
+        </p>
       </section>
 
-      <section class="archive-section archive-featured" id="start-here">
-        <div class="section-heading">
-          <div>
-            <p class="section-kicker">Start here</p>
-            <h2>Reading map</h2>
-          </div>
-          <p class="section-note">A curated layer before the full archive, tuned for technical scanning.</p>
-        </div>
-
-        {% assign latest_post = site.posts | first %}
-        <div class="archive-feature-grid">
-          {% if latest_post %}
-          <a class="archive-feature-main" href="{{ latest_post.url | relative_url }}">
-            <span class="resource-badge">latest</span>
-            <h3>{{ latest_post.title }}</h3>
-            <p>{{ latest_post.date | date: "%B %d, %Y" }}</p>
-          </a>
-          {% endif %}
-
-          <div class="archive-guide-list">
-            <a class="archive-guide-card" href="{{ '/blog.html#markdown-resources' | relative_url }}">
-              <span>Writing</span>
-              <strong>Model systems notes</strong>
-              <p>Attention, multimodal architecture, JAX / TPU workflows, RL, and engineering traces.</p>
-            </a>
-            <a class="archive-guide-card" href="{{ '/blog.html#document-resources' | relative_url }}">
-              <span>Documents</span>
-              <strong>Papers and slides</strong>
-              <p>Static PDF, PPT, and PPTX resources grouped below for quick retrieval.</p>
-            </a>
-          </div>
-        </div>
+      <section class="archive-stats" aria-label="Archive counts">
+        <article>
+          <strong>{{ site.posts | size }}</strong>
+          <span>Markdown posts</span>
+        </article>
+        <article>
+          <strong>{{ pdf_files | size }}</strong>
+          <span>PDF files</span>
+        </article>
+        <article>
+          <strong>{{ ppt_files | size }}</strong>
+          <span>Slide decks</span>
+        </article>
       </section>
 
-      <section class="archive-section archive-radar" aria-label="Archive topic map">
-        <div class="archive-radar-head">
-          <p class="section-kicker">Topic radar</p>
-          <p>Use these lanes as mental folders for the archive. The files remain chronological; the map gives them shape.</p>
+      <section class="archive-section" id="posts">
+        <div class="section-label">
+          <span>01</span>
+          <h2>All posts</h2>
         </div>
-        <div class="archive-topic-grid">
-          <a class="archive-topic-card" href="#markdown-resources">
-            <span>01</span>
-            <strong>LLM / VLM internals</strong>
-            <p>Architecture reading, multimodal prompts, attention variants, and inference behavior.</p>
-          </a>
-          <a class="archive-topic-card" href="#markdown-resources">
-            <span>02</span>
-            <strong>Training systems</strong>
-            <p>JAX, TPU, distributed execution, memory tradeoffs, and debugging notes.</p>
-          </a>
-          <a class="archive-topic-card" href="#markdown-resources">
-            <span>03</span>
-            <strong>Research summaries</strong>
-            <p>RLHF, PPO, DPO, linear attention, paper notes, and reusable concept maps.</p>
-          </a>
-        </div>
-      </section>
-
-      <section class="archive-section" id="markdown-resources">
-        <div class="section-heading">
-          <div>
-            <p class="section-kicker">Category 01</p>
-            <h2>Markdown posts</h2>
-          </div>
-          <p class="section-note">Published writing generated from <code>_posts</code>.</p>
-        </div>
-
-        <div class="list-table archive-list">
+        <div class="archive-list">
           {% for post in site.posts %}
-          <a class="list-row archive-row" href="{{ post.url | relative_url }}">
-            <span class="list-date">{{ post.date | date: "%b %d, %Y" }}</span>
-            <span class="list-title-wrap">
-              <span class="list-title">{{ post.title }}</span>
-              <span class="list-subtitle">Markdown note / {{ post.date | date: "%Y" }}</span>
+          <a class="archive-row" href="{{ post.url | relative_url }}">
+            <time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: "%Y.%m.%d" }}</time>
+            <span>
+              <strong>{{ post.title }}</strong>
+              <em>{% if post.categories and post.categories != empty %}{{ post.categories | join: " / " }}{% else %}note{% endif %}</em>
             </span>
-            <span class="row-tag">md</span>
           </a>
           {% endfor %}
         </div>
       </section>
 
-      <section class="archive-section" id="document-resources">
-        <div class="section-heading">
-          <div>
-            <p class="section-kicker">Category 02</p>
-            <h2>Papers, slides, and documents</h2>
-          </div>
-          <p class="section-note">Grouped by file type for now; filenames carry the topic labels.</p>
+      <section class="archive-section" id="documents">
+        <div class="section-label">
+          <span>02</span>
+          <h2>Documents</h2>
         </div>
-
-        <div class="resource-columns">
-          <div class="resource-group">
-            <div class="resource-group-head">
-              <h3>PPT / PPTX</h3>
-              <span>{{ ppt_files | size }}</span>
-            </div>
-            <div class="resource-grid">
-              {% for file in ppt_files %}
-              <a class="resource-card" href="{{ file.path | relative_url }}">
-                <span class="resource-badge">ppt</span>
-                <strong>{{ file.basename | replace: "_", " " | replace: "-", " " }}</strong>
-                <span class="resource-meta">{{ file.name }}</span>
-              </a>
-              {% endfor %}
-            </div>
-          </div>
-
-          <div class="resource-group">
-            <div class="resource-group-head">
+        <div class="document-grid">
+          <section class="document-group">
+            <div class="document-head">
               <h3>PDF</h3>
               <span>{{ pdf_files | size }}</span>
             </div>
-            <div class="resource-grid">
+            <div class="document-list">
               {% for file in pdf_files %}
-              <a class="resource-card" href="{{ file.path | relative_url }}">
-                <span class="resource-badge">pdf</span>
+              <a href="{{ file.path | relative_url }}">
                 <strong>{{ file.basename | replace: "_", " " | replace: "-", " " }}</strong>
-                <span class="resource-meta">{{ file.name }}</span>
+                <span>{{ file.name }}</span>
               </a>
               {% endfor %}
             </div>
-          </div>
+          </section>
+
+          <section class="document-group">
+            <div class="document-head">
+              <h3>PPT / PPTX</h3>
+              <span>{{ ppt_files | size }}</span>
+            </div>
+            <div class="document-list">
+              {% for file in ppt_files %}
+              <a href="{{ file.path | relative_url }}">
+                <strong>{{ file.basename | replace: "_", " " | replace: "-", " " }}</strong>
+                <span>{{ file.name }}</span>
+              </a>
+              {% endfor %}
+            </div>
+          </section>
         </div>
       </section>
+
+      <footer class="site-footer">
+        <p>Archive generated from <code>_posts</code>, <code>pdf</code>, and <code>ppt</code>.</p>
+        <nav aria-label="Footer links">
+          <a href="{{ '/' | relative_url }}">Home</a>
+          <a href="https://github.com/{{ site.github_username }}" target="_blank" rel="noreferrer">GitHub</a>
+          <a href="{{ '/feed.xml' | relative_url }}">RSS</a>
+        </nav>
+      </footer>
     </main>
   </body>
 </html>
