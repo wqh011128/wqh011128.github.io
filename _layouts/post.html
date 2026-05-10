@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="{{ '/style.css' | relative_url }}" />
@@ -98,35 +98,29 @@
       id="MathJax-script"
       src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
     ></script>
-    <script
-      defer
-      src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"
-    ></script>
     <script defer src="{{ '/post.js' | relative_url }}"></script>
   </head>
-  <body class="post-page">
-    <main class="post-shell">
-      <header class="post-header">
-        <a class="post-back" href="{{ '/blog.html' | relative_url }}">Back to blog</a>
+  <body class="site-page post-page">
+    <main class="site-shell post-shell">
+      <header class="site-header post-topbar" aria-label="Site header">
+        <a class="site-brand" href="{{ '/' | relative_url }}">Qihang Wu</a>
+        <nav class="site-nav" aria-label="Primary navigation">
+          <a href="{{ '/' | relative_url }}">Home</a>
+          <a href="{{ '/blog.html' | relative_url }}">Notes</a>
+          <a href="mailto:{{ site.email }}">Email</a>
+        </nav>
+      </header>
+
+      <article class="post-head">
+        <a class="post-back" href="{{ '/blog.html' | relative_url }}">Archive</a>
         <p class="post-meta">
-          <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: "%B %d, %Y" }}</time>
+          <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: "%Y.%m.%d" }}</time>
           {% if page.categories and page.categories != empty %}
-          <span class="post-divider">/</span>
-          <span>{{ page.categories | join: ", " }}</span>
+          <span>{{ page.categories | join: " / " }}</span>
           {% endif %}
         </p>
         <h1>{{ page.title }}</h1>
-        <div class="post-stats" aria-label="Article stats">
-          <span class="post-stat">
-            <span class="post-stat-label">Type</span>
-            <span>Markdown Post</span>
-          </span>
-          <span class="post-stat" id="busuanzi_container_page_pv">
-            <span class="post-stat-label">Views</span>
-            <span><span id="busuanzi_value_page_pv"></span> reads</span>
-          </span>
-        </div>
-      </header>
+      </article>
 
       <div class="post-layout">
         <article class="post-content" id="post-content">
@@ -135,15 +129,15 @@
           {% if page.previous or page.next %}
           <nav class="post-pagination" aria-label="Post navigation">
             {% if page.previous %}
-            <a class="post-pagination-link post-pagination-prev" href="{{ page.previous.url | relative_url }}">
-              <span class="post-pagination-label">上一篇</span>
+            <a class="post-pagination-link" href="{{ page.previous.url | relative_url }}">
+              <span>Previous</span>
               <strong>{{ page.previous.title }}</strong>
             </a>
             {% endif %}
 
             {% if page.next %}
             <a class="post-pagination-link post-pagination-next" href="{{ page.next.url | relative_url }}">
-              <span class="post-pagination-label">下一篇</span>
+              <span>Next</span>
               <strong>{{ page.next.title }}</strong>
             </a>
             {% endif %}
@@ -153,10 +147,7 @@
 
         <aside class="post-sidebar" aria-label="Article outline">
           <div class="post-outline" id="post-outline" hidden>
-            <div class="post-outline-head">
-              <p class="post-outline-kicker">On this page</p>
-              <strong>Table of contents</strong>
-            </div>
+            <p class="post-outline-kicker">On this page</p>
             <nav class="post-outline-nav" id="post-outline-nav"></nav>
           </div>
         </aside>
