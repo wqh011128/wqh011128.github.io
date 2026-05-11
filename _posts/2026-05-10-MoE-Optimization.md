@@ -37,7 +37,7 @@ MoE 优化的主线就是：
 
 ------
 
-## **1. MoE 层到底在执行什么**
+## **1. MoE 基本流程**
 
 以常见的 Transformer MoE FFN 为例，一个 MoE 层可以分成四类操作。
 
@@ -75,7 +75,7 @@ $$
 
 ## **2. MiniMax-01：token group / process group 级别的 overlap**
 
-MiniMax-01 的 MoE 优化重点不是把 expert 内部拆成 `Linear-1 / Linear-2` 的流水线，而是围绕 **Expert Parallelism (EP)**、**Expert Tensor Parallelism (ETP)** 和 **Expert Data Parallelism (EDP)** 做更合理的通信计算重叠。
+在MiniMax-01的总结中解读了EP，EP overlap，以及MiniMax的MoE创新。其优化重点不是把 expert 内部拆成 `Linear-1 / Linear-2` 的流水线，而是围绕 **Expert Parallelism (EP)**、**Expert Tensor Parallelism (ETP)** 和 **Expert Data Parallelism (EDP)** 做更合理的通信计算重叠。
 
 ### 2.1 Token-grouping-based overlap
 
@@ -103,7 +103,7 @@ group 2:                   dispatch -> compute -> combine
 
 这样，某个 group 在做 expert compute 时，另一个 group 可以做 dispatch 或 combine。
 
-这是一种 **token group 粒度** 的 overlap。它没有改变 expert FFN 的数学结构，也没有把单个 expert 的 GEMM 拆成 wave。它只是把 token batch 切小，让通信和计算不要在整层级别完全串行。
+这是一种 **token group 粒度** 的 overlap。它没有改变 expert FFN 的数学结构，也没有把单个 expert 的 GEMM 拆成 wave（像DeepSeek v4那样）。它只是把 token batch 切小，让通信和计算不要在整层级别完全串行。
 
 ### 2.2 为什么还要 ETP / EDP
 
@@ -115,7 +115,7 @@ MiniMax-01 进一步指出，仅靠 EP 不一定够。当 expert 参数太大时
 a2a-dispatch -> allgather -> expert compute -> reduce-scatter -> a2a-combine
 ```
 
-这里的 `allgather` 和 `reduce-scatter` 不是 DeepSeek Figure 5 里的 `Linear-1 / Linear-2`。它们来自 tensor parallelism：为了让多个设备共同计算一个 expert，需要先收集输入或中间张量，再把结果规约分散回去。
+这里的 `allgather` 和 `reduce-scatter` 来自 tensor parallelism：为了让多个设备共同计算一个 expert，需要先收集输入或中间张量，再把结果规约分散回去。
 
 MiniMax-01 还引入 **Expert Data Parallelism (EDP)**，本质上是在 expert 维度做复制，缓解某些 expert 负载过高的问题。
 
@@ -127,8 +127,6 @@ MiniMax-01 更像是训练系统级别的 MoE 并行优化：
 - overlap 粒度主要是 token group 和 process group。
 - 它处理的是大规模训练时不同并行策略之间的通信压力。
 - 它不是 Comet / FlashMoE / DeepSeek 那种更细的 expert GEMM pipeline 或 kernel-level 调度。
-
-这也是最容易误解的地方：MiniMax-01 的“五段”并不等价于 DeepSeek-V4 的“五段”。
 
 ------
 
