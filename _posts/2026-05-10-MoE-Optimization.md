@@ -132,67 +132,467 @@ MiniMax-01 更像是训练系统级别的 MoE 并行优化：
 
 ------
 
-## **3. Comet：shared tensor / GEMM tile 级别的 overlap**
+## **3. Comet：fine-grained computation-communication overlapping**
 
-Comet 讨论的问题更细。它关注 MoE 中两个 producer-consumer pipeline：
+这一节开始单独精读 **Comet: Fine-grained Computation-communication Overlapping for Mixture-of-Experts**。这篇文章可以看成是在回答一个很具体的问题：
 
-```text
-Dispatch communication -> Linear-1 GEMM
-Linear-2 GEMM -> top-k reduction / Combine communication
-```
+> 传统 EP overlap 已经把 token batch 切成 chunk 了，为什么 MoE 层里还是有明显 GPU idle time？如果继续往下切，应该切什么，怎么切，谁先算，谁先传？
 
-Comet 的关键观察是：通信和计算的粒度不一致。
+Comet 的答案不是简单地“再把 chunk 切小一点”。它真正做的是：找到 MoE layer 中通信算子和计算算子之间共享的 buffer，也就是 **shared tensor**，然后根据 consumer 的依赖关系决定沿哪个维度切分，并重新安排 GroupGEMM 的 tile 执行顺序。
 
-- 通信通常以 token 或 token block 为单位。
-- GEMM 通常以 tile 为单位，例如 $128 \times 128$。
-- 如果系统必须等整个 dispatch 完成再做 GEMM，就会浪费已经到达的 token。
+### 3.1 传统 EP overlap 为什么还是 coarse-grained
 
-### 3.1 Shared tensor 是什么
-
-Comet 把通信和 GEMM 之间共享的中间张量叫 **shared tensor**。例如 dispatch 后的 token buffer，会被 `Linear-1` 消费；`Linear-2` 的输出 buffer，又会被 combine 或 top-k reduction 消费。
-
-Comet 的优化可以概括为两步：
+Comet 在 Introduction 里先分析了传统做法。一个分布式 MoE 层通常可以抽象成：
 
 ```text
-1. Decompose shared tensor
-2. Reschedule decomposed tensor
+Receive / Dispatch
+-> Expert computation
+-> Send / Combine
 ```
 
-也就是先把 shared tensor 拆成更小的单元，再重新安排这些单元被通信和 GEMM 消费的顺序。
+如果不 overlap，就是先收完所有 token，再做 expert GEMM，最后再发回结果。传统 EP overlap 会把 expert computation kernel 切成几个 chunk，让某个 chunk 的计算和另一个 chunk 的通信同时发生。
 
-### 3.2 Linear-1 前的优化
+![Comet Figure 1: MoE execution analysis](https://arxiv.org/html/2502.19811/x1.png)
 
-在 `Dispatch -> Linear-1` 这条链路上，Comet 沿 token 维度切 shared tensor。某些 token block 已经到达时，GEMM 就可以先处理这些 token block，不必等待所有远程 token 全部到齐。
+Figure 1(b) 想表达的是：把输入拆成 chunk 后，确实可以让一部分通信和一部分计算重叠，但这种 overlap 仍然是 **coarse-grained**。原因有三个。
 
-直觉时间线是：
+第一，chunk 仍然必须作为一个整体 ready。即使 chunk 已经比完整 batch 小，一个 chunk 内部仍然可能有很多 token；只要这个 chunk 需要的 token 还没全部到齐，expert computation 就不能启动。
+
+第二，chunk 变小会伤害 GEMM 效率。论文里提到，原本完整 expert computation 的时间是 $t$，切成两个 chunk 后可能变成 $t_1+t_2>t$。这不是数学计算量变多了，而是小 GEMM 更难吃满 tensor core，还会带来更多调度和访存开销。
+
+第三，MoE 是动态的。这里的动态不是模型结构变了，而是 router 每次会把不同 token 分给不同 experts。某个 step 里 Expert0 可能收到很多 token，Expert1 很少；下个 step 又可能反过来。于是每个 expert 的输入形状、通信量、计算量都在运行时变化，导致“通信 chunk”和“计算 chunk”的时间很难稳定对齐。
+
+所以传统 EP overlap 的核心问题是：它把通信和计算装进不同 kernel / stream 里，让它们粗粒度并行，但对 GPU thread blocks、GEMM tile 顺序、remote I/O 这些底层资源缺少精细控制。
+
+### 3.2 MoE Structure：论文里的 forward 过程
+
+Comet 的 Figure 2 给了一个普通 MoE layer 的执行例子：两个 GPU，总共四个 experts，GPU0 放 Expert0/Expert1，GPU1 放 Expert2/Expert3。每个 token 被 router 分到 $k$ 个 experts。图里 Token A 被路由到 Expert0、Expert1、Expert3。
+
+![Comet Figure 2: MoE layer across two GPUs](https://arxiv.org/html/2502.19811/x2.png)
+
+论文中几个重要符号可以这样读：
+
+| 符号 | 含义 |
+|---|---|
+| $E$ | expert 总数 |
+| $k$ | 每个 token 被路由到的 expert 数量，也就是 top-k |
+| $TP$ | tensor parallel size |
+| $EP$ | expert parallel size |
+| $TP \times EP$ | 总并行 world size |
+| $M$ | GEMM 中的 row 维度，在 MoE 里通常对应 token / token-expert rows |
+| $K$ | GEMM reduction 维度，例如输入 hidden 或 FFN intermediate 维 |
+| $N$ | GEMM output column 维度，例如输出 hidden 或 FFN intermediate 维 |
+| $T_M$ | GEMM tile 在 $M$ 维的大小 |
+| $T_N$ | GEMM tile 在 $N$ 维的大小 |
+
+MoE 的每个 expert FFN 有两层 GEMM：
 
 ```text
-dispatch tile 0 done -> Linear-1 consumes tile 0
-dispatch tile 1 done -> Linear-1 consumes tile 1
-dispatch tile 2 done -> Linear-1 consumes tile 2
+layer0: first expert GEMM, usually up/gate projection
+activation: SiLU / SwiGLU
+layer1: second expert GEMM, usually down projection
 ```
 
-这比整层 barrier 更细。
+论文把 MoE 的执行过程分成两类 pipeline。
 
-### 3.3 Linear-2 后的优化
+**communication-computation pipeline:** 对应 MoE layer0。
 
-在 `Linear-2 -> Combine` 这条链路上，Comet 需要解决另一个问题：GEMM 产生的输出如果必须等全部算完，combine 仍然会被拖住。
+```text
+Dispatch communication -> layer0 GroupGEMM
+```
 
-所以 Comet 会重排 GroupGEMM 的计算顺序，让一部分输出 tile 先被产生、先进入 reduction 或 combine。它的目标不是改变最终结果，而是改变“什么时候产生哪一块结果”。
+这里通信是 producer，layer0 GroupGEMM 是 consumer。shared tensor 是 dispatch 之后、即将被 layer0 GEMM 消费的 expert input buffer。
 
-### 3.4 Thread block specialization
+**computation-communication pipeline:** 对应 MoE layer1。
 
-Comet 还做了 thread block specialization：一部分 thread blocks 专门负责计算，一部分 thread blocks 专门负责通信。原因是通信和 GEMM 对 GPU 资源的需求不同，如果同一个 block 什么都做，容易互相干扰。
+```text
+layer1 GroupGEMM -> top-k routed reduction / combine communication
+```
 
-因此 Comet 会预编译多个 kernel 版本，比如不同数量的 communication blocks，然后运行时根据 profile 选择更合适的配置。
+这里 layer1 GroupGEMM 是 producer，reduction/combine 是 consumer。shared tensor 是 layer1 GEMM 产生、即将被合并和通信的 expert output buffer。
 
-### 3.5 Comet 的定位
+### 3.3 TP 是什么，为什么 MoE 会用
 
-Comet 的核心不是“把 MoE 拆成几个阶段”这么简单，而是：
+**Tensor Parallelism (TP)** 是把同一个线性层的权重切到多个 GPU 上。它和 EP 的区别是：
 
-> 找到 MoE 中通信和 GEMM 之间共享的 tensor，拆开它，并重排每一块 tensor 的执行顺序。
+```text
+EP: 不同 experts 放在不同 GPU 上，每个 expert 权重通常是完整的。
+TP: 同一个 expert / linear 的权重沿 hidden dimension 切开，多张 GPU 一起算一个矩阵乘。
+```
 
-它比 MiniMax-01 更细，因为它已经进入 GEMM tile / thread block 级别；但它还没有像 FlashMoE 那样把整个 MoE operator 放进一个 persistent kernel 里。
+比如一个线性层：
+
+$$
+Y = XW,\quad W\in\mathbb{R}^{K\times N}
+$$
+
+如果按 $N$ 维做 column parallel，GPU0 负责 $W[:,0:N/2]$，GPU1 负责 $W[:,N/2:N]$。如果按 $K$ 维做 row parallel，多个 GPU 分别计算部分乘积，再做 reduce。
+
+MoE 会用 TP，是因为单个 expert 的 FFN 也可能很大。只用 EP 时，每个 expert 权重完整放在某张 GPU 上；如果 expert 太大，或者希望提升单 expert GEMM 的吞吐，就需要 TP 继续切 expert 内部权重。实际大模型里常常是 **EP + TP 混合并行**。
+
+### 3.4 Granularity mismatch：token-level communication vs tile-level computation
+
+Comet 的第一个关键观察是 **granularity mismatch between computation and communication**。
+
+在 MoE 里，通信的基本单位通常是 token。Router 决定某个 token 要去哪个 expert，于是系统把这个 token 发到 expert 所在 GPU。
+
+但高性能 GEMM 的基本单位不是单 token，而是 tile。论文里 Figure 2 的紫色块就是一个 computation tile，例如 $128\times128$。这意味着一个 expert 的某个 GEMM tile 可能需要 128 个 token rows，而这些 token 由 router 决定，可能随机分布在多个 GPU 上。
+
+这就产生了依赖：
+
+```text
+一个 GEMM tile 需要的 token rows 没有全部 ready
+-> 这个 tile 不能开始计算
+```
+
+所以问题不是“tile 大小不一样导致完成时间不一样”，而是：
+
+> 每个 tile 依赖的 token 来源不同，ready 时间不同；coarse-grained dispatch 会让 tile 等整个 chunk 或整个 expert input buffer。
+
+Comet 因此提出 fine-grained communication：每个 computation tile 通过 **Unified Virtual Address (UVA)** 直接读/写它需要的数据。
+
+UVA 的实际作用是提供统一虚拟地址空间。在支持 GPU peer access 的情况下，GPU kernel 可以拿到远端 GPU buffer 的地址，并发起细粒度 remote load/store。它不是让 tile “自己有智能”，而是让 kernel 里的 communication thread blocks 可以根据路由 metadata，把某个 tile 需要的 remote token rows 拉到本地，或者把某个输出 tile 写回目标位置。
+
+但 fine-grained remote I/O 很慢。如果把远程读写塞进 GEMM compute thread block，会破坏 tensor core pipeline。Comet 后面才需要 thread block specialization：通信 block 专门做 remote I/O，计算 block 保持高效 GEMM。
+
+### 3.5 Design overview：shared tensor 是桥
+
+Comet 的 Figure 3 是整篇文章的设计总览。
+
+![Comet Figure 3: Design overview](https://arxiv.org/html/2502.19811/x3.png)
+
+Comet 有两个核心设计：
+
+| 机制 | 解决什么 |
+|---|---|
+| Shared tensor based dependency resolving | 分析 producer/consumer 之间的真实数据依赖，决定 shared tensor 沿哪个维度切，并重排 tile 顺序 |
+| Adaptive workload assignment | 在 fused kernel 内动态分配 thread blocks 给通信和计算，减少 pipeline bubble |
+
+这里的 **shared tensor** 可以简单理解成：producer 和 consumer 共用的那块中间 buffer。
+
+对 layer0：
+
+```text
+producer: dispatch communication
+shared tensor: expert input X_e
+consumer: layer0 GroupGEMM
+```
+
+对 layer1：
+
+```text
+producer: layer1 GroupGEMM
+shared tensor: expert output Y_e
+consumer: top-k routed reduction + combine communication
+```
+
+shared tensor 重要，是因为 overlap 只有在 producer 和 consumer 能处理 shared tensor 的不同独立部分时才成立。如果 consumer 必须等完整 tensor，overlap 就退化成普通串行。
+
+### 3.6 3.1.1：How to decompose the shared tensor
+
+Figure 4 把 layer0 和 layer1 都建模成 producer-consumer 关系。
+
+![Comet Figure 4: Producer-consumer modeling](https://arxiv.org/html/2502.19811/x4.png)
+
+Comet 的原则是：
+
+> 沿 consumer 视角下相互独立的维度切 shared tensor。
+
+#### 3.6.1 Layer0 为什么沿 $M$ 切
+
+Layer0 的 shared tensor 是 layer0 GEMM 的输入矩阵：
+
+$$
+X_e \in \mathbb{R}^{M_e\times K}
+$$
+
+其中 $M_e$ 是 expert $e$ 收到的 token rows 数量，$K$ 是 token embedding / hidden dimension。
+
+Layer0 的 consumer 是 GEMM：
+
+$$
+H_e = X_e W_{e,0}
+$$
+
+对 GEMM 来说，不同 token rows 之间相互独立。也就是说，先算 $X_e[M_0,:]$ 和后算 $X_e[M_1,:]$ 不会改变结果。因此 layer0 可以沿 $M$ 维切：
+
+```text
+X_e[M0, :] -> layer0 GroupGEMM
+X_e[M1, :] -> layer0 GroupGEMM
+X_e[M2, :] -> layer0 GroupGEMM
+```
+
+但不能沿 $K$ 维随便切，因为 GEMM 对 $K$ 维做 reduction。算一个输出元素需要完整的 $K$ 维乘加：
+
+$$
+H_{e,i,n}=\sum_{k}X_{e,i,k}W_{e,0,k,n}
+$$
+
+如果切 $K$，不同分块之间还要额外做 partial sum reduction，consumer 不能直接独立消费。
+
+#### 3.6.2 Layer1 为什么沿 $N$ 切
+
+Layer1 的 shared tensor 是 layer1 GEMM 的输出：
+
+$$
+Y_e \in \mathbb{R}^{M_e\times N}
+$$
+
+Layer1 后面的 consumer 不是普通逐元素操作，而是 **top-k routed reduction + combine**。注意，这里的 top-k reduction 不是重新选择 top-k；top-k 在 router 阶段已经完成了。这里的意思是：对同一个原始 token 的多个 expert 输出按 router weight 做加权合并。
+
+例如 top-2：
+
+$$
+O_t = w_{t,e_1}Y_{t,e_1}+w_{t,e_2}Y_{t,e_2}
+$$
+
+如果沿 $M$ 切，可能把同一个 token 的两个 expert 输出拆到不同块：
+
+```text
+M tile 0: token A from Expert0
+M tile 1: token A from Expert3
+```
+
+这时 consumer 处理 `M tile 0` 时拿不到 token A 的完整 top-k routed outputs，因此 $M$ 维存在 interdependency。
+
+但 $N$ 维是 output feature column。不同 feature columns 的 weighted reduction 相互独立：
+
+$$
+O_{t,n}=w_{t,e_1}Y_{t,e_1,n}+w_{t,e_2}Y_{t,e_2,n}
+$$
+
+所以 layer1 可以沿 $N$ 切：
+
+```text
+Y[:, N0] -> reduction + combine
+Y[:, N1] -> reduction + combine
+Y[:, N2] -> reduction + combine
+```
+
+这就是论文中“layer0 沿 $M$ 分解，layer1 沿 $N$ 分解”的根本原因。
+
+### 3.7 3.1.2：How to reschedule the decomposed shared tensor
+
+只知道沿哪个维度切还不够。Comet 还要决定切完之后怎么排执行顺序。论文给了两个原则：
+
+1. sub-tensors 要尽量对齐原始 GEMM tile granularity，否则 GEMM 效率会下降。
+2. 优先执行 producer 已经产出、consumer 可以立即使用的部分，让 consumer 尽早启动。
+
+#### 3.7.1 Layer0：按 $M$ 切后，先算 local-token tiles
+
+Layer0 是：
+
+```text
+Dispatch -> layer0 GroupGEMM
+```
+
+Figure 5 画的是 Rank0 上有三个 experts，每个 expert 都需要 local data 和 remote data。
+
+![Comet Figure 5: Decompose and reschedule layer0 shared tensor](https://arxiv.org/html/2502.19811/x5.png)
+
+Comet 会先按 source rank 对 token 排序。直觉上：
+
+```text
+local tokens | remote rank 1 tokens | remote rank 2 tokens | ...
+```
+
+然后 GroupGEMM 的 tile compute sequence 会优先从 local tokens 所在 tile 开始。这样本地 tile 可以马上计算，同时远程 token 还在通过 communication blocks 传输。
+
+时间线可以理解成：
+
+```text
+t0: compute local-token tiles
+    communicate remote-rank-1 token rows
+
+t1: compute remote-rank-1 tiles
+    communicate remote-rank-2 token rows
+
+t2: compute remote-rank-2 tiles
+```
+
+这里的 tile 通常类似 $T_M\times T_N$，例如论文前文举的 $128\times128$。但要注意，这个 tile 是 **某个 expert GEMM 内部的 tile**，不是把不同 experts 的 token 混在一起乘同一个权重。
+
+#### 3.7.2 关键疑问：不同 experts 权重不同，$128\times128$ tile 怎么算
+
+这是理解 GroupGEMM 的关键。
+
+GroupGEMM 不是把所有 experts 的 token 拼成一个大矩阵，然后乘同一个权重。它是一组独立 GEMM 的调度：
+
+$$
+H_e = X_e W_{e,0},\quad e\in\mathcal{E}_{\mathrm{local}}
+$$
+
+也就是说，Rank0 上如果有 Expert0、Expert1、Expert2，那么 GroupGEMM 实际上在执行：
+
+```text
+Expert0: X_0 @ W_0
+Expert1: X_1 @ W_1
+Expert2: X_2 @ W_2
+```
+
+每个 computation tile 都带着 expert id。属于 Expert0 的 tile 只会用 $W_0$，属于 Expert1 的 tile 只会用 $W_1$。高性能 grouped GEMM kernel 会通过 metadata / pointer arrays / offsets 找到每个 expert 对应的 input pointer、weight pointer 和 output pointer。
+
+所以 Figure 5 中的 $M$ 切分不是：
+
+```text
+把不同 expert 的 128 行混成一个 tile，用同一个 W 去乘
+```
+
+而是：
+
+```text
+在每个 expert 自己的 X_e[M_e, K] 里按 M tile 切；
+GroupGEMM 只是把多个 expert 的 tile 放到同一个 kernel 里统一调度。
+```
+
+如果某个 expert 收到的 token 不足一个完整 $T_M$，实现上可以用 partial tile、padding 或 grouped GEMM 的 ragged shape metadata 处理。数学上仍然是每个 expert 使用自己的权重。
+
+这也解释了为什么 layer0 按 $M$ 切完不需要“还原成原始 token 顺序”再进入 layer1。Layer0 输出仍然按 expert 分组保存：
+
+$$
+H_e[M_e, K']
+$$
+
+中间 activation 是逐元素的，不需要跨 expert 或跨 token 重新排列。Layer1 继续对同一个 expert 的 $H_e$ 做：
+
+$$
+Y_e = H_e W_{e,1}
+$$
+
+真正需要恢复到原始 token 顺序，是 layer1 结束后的 routed reduction / combine 阶段。
+
+#### 3.7.3 Layer1：按 $N$ 切后，column-wise 执行 GroupGEMM
+
+Layer1 是：
+
+```text
+layer1 GroupGEMM -> reduction + combine communication
+```
+
+Figure 6 说明了 Comet 如何重排 layer1 的 GroupGEMM。
+
+![Comet Figure 6: Rescheduled compute sequence for layer1](https://arxiv.org/html/2502.19811/x6.png)
+
+如果不重排，GroupGEMM 可能按 expert 顺序执行：
+
+```text
+Expert0: N0 -> N1 -> N2 -> N3
+Expert1: N0 -> N1 -> N2 -> N3
+Expert2: N0 -> N1 -> N2 -> N3
+```
+
+这样 consumer 很难提前开始，因为它想处理某个 column block 时，需要相关 experts 的同一段 columns 都已经产生。
+
+Comet 改成 column-wise：
+
+```text
+N0 group:
+  Expert0:N0 -> Expert1:N0 -> Expert2:N0
+
+N1 group:
+  Expert0:N1 -> Expert1:N1 -> Expert2:N1
+
+N2 group:
+  Expert0:N2 -> Expert1:N2 -> Expert2:N2
+```
+
+注意，这里的 `N0` 不是“对 128 列做 top-k selection”。Top-k selection 已经在 router 完成。这里做的是：对已经确定的 top-k experts，在 `N0` 这一段 output features 上做 weighted reduction 和 combine。
+
+如果 $N_0$ 表示 columns $0:T_N$，那么 consumer 可以先做：
+
+$$
+O_{t,N_0}=\sum_{e\in\mathrm{TopK}(t)}w_{t,e}Y_{t,e,N_0}
+$$
+
+同时 layer1 GroupGEMM 继续计算 $Y[:,N_1]$。这样就形成：
+
+```text
+compute Y[:, N0]
+-> reduce/combine Y[:, N0]
+
+while
+
+compute Y[:, N1]
+```
+
+所以 Figure 6 的核心不是“列维度上重新选 top-k”，而是：按 column block 提前产出可被 consumer 完整处理的一段 output features。
+
+### 3.8 3.2：Adaptive Workload Assignment
+
+经过 3.1 的 dependency resolving 后，Comet 已经知道哪些数据可以先算、哪些数据可以先传。但还有一个问题：fine-grained remote I/O 很慢，GEMM 又很吃 tensor core。谁来做通信，谁来做计算，分配多少 GPU 资源，不能拍脑袋。
+
+Figure 7 展示的是 Comet 在 Hopper 上的 fused kernel 设计。
+
+![Comet Figure 7: Thread block specialized kernel](https://arxiv.org/html/2502.19811/x7.png)
+
+#### 3.8.1 Thread block specialization
+
+最直接的融合方式叫 vertical fusion：每个 thread block 既做 GEMM，也在 prologue / epilogue 里做通信 I/O。
+
+问题是 remote I/O 延迟远高于本地显存访问。如果把 remote read/write 插进 GEMM thread block，可能会阻塞后续 tensor core 计算，尤其 Hopper 上 GEMM 通常利用 TMA 建立异步 compute pipeline，长延迟 remote I/O 会破坏这个 pipeline。
+
+Comet 因此把 thread blocks 隔离成两类：
+
+```text
+compute thread blocks: 负责 GEMM，尽量复用默认 CUTLASS GEMM 实现
+communication thread blocks: 负责 remote I/O、top-k routed reduction、local/remote writeback
+```
+
+这样做的代价是会多一些 global memory 读写，但收益是通信不会污染 GEMM 的关键路径，而且系统可以精确控制多少 blocks 做通信、多少 blocks 做计算。
+
+#### 3.8.2 Adaptive thread block assignment
+
+论文 3.2.2 解决的是：通信 block 和计算 block 到底分多少？
+
+假设一个 fused kernel 总共有 $N_{\mathrm{TB}}$ 个 thread blocks，其中：
+
+```text
+N_{\mathrm{comp}}: compute blocks
+N_{\mathrm{comm}}: communication blocks
+N_{\mathrm{TB}} = N_{\mathrm{comp}} + N_{\mathrm{comm}}
+```
+
+如果 $N_{\mathrm{comm}}$ 太少，远程 I/O 跟不上，GEMM 算完后会等通信。
+如果 $N_{\mathrm{comm}}$ 太多，GEMM blocks 变少，计算吞吐下降。
+最佳分界点和输入 token length、TP/EP 配置、expert shape、硬件带宽都有关。
+
+Figure 8 说明不同配置下最优 $N_{\mathrm{comm}}$ 不同。
+
+![Comet Figure 8: Adaptive thread block assignment](https://arxiv.org/html/2502.19811/x8.png)
+
+论文给的例子是：当输入 token length 从 4096 变到 16384 时，最优通信 block 数会变化；当 TP 从 8 调到 4 时，最优分配点也会明显变化。
+
+所以 Comet 的做法不是运行时在线搜索，而是：
+
+```text
+1. 预编译多个 kernel，每个 kernel 使用不同的 compute/communication block division point。
+2. 部署前 profile 不同模型配置和输入形状，记录最优配置 metadata。
+3. 运行时根据 metadata 选择合适 kernel。
+```
+
+这就是 adaptive workload assignment。它的目标不是改变数学计算，而是让 fine-grained pipeline 的通信段和计算段时间尽量对齐，减少 pipeline bubbles。
+
+### 3.9 把我们讨论过的几个易错点放在一起
+
+**Tile 不是 token chunk。** token chunk 是 EP overlap 的 coarse 粒度；tile 是 GEMM kernel 的计算分块，例如 $128\times128$。一个 tile 通常包含多个 token rows 和一段 output columns。
+
+**Tile 不是 expert 的最大容量。** 一个 expert 实际收到多少 token 由 router 决定，记作 $M_e$。GEMM tile 是在 $M_e\times K$ 或 $M_e\times N$ 这个矩阵内部继续切出来的计算块。
+
+**Layer0 的 $M$ 切分发生在 layer0 计算前。** 它切的是 dispatch 后的 expert input $X_e$，目的是 token rows 到一块、算一块。
+
+**Layer1 的 $N$ 切分发生在 layer1 计算过程中。** 它不是先完整算出 $Y_e$ 再切，而是调整 GroupGEMM 顺序，直接先产出 $Y[:,N_0]$，让 reduction/combine 提前消费。
+
+**Layer0 到 layer1 中间不需要还原成原始 token 顺序。** layer0 输出仍然按 expert 分组，activation 和 layer1 都可以在 expert-local layout 里继续做。只有最终 combine 时才需要根据 routing metadata 回到原 token 位置。
+
+**UVA 不等于免费远程访问。** UVA 只是让 kernel 可以用统一地址访问远端 GPU buffer；真正的通信仍然有高延迟，所以 Comet 才要用 communication thread blocks 隔离远程 I/O。
+
+### 3.10 Comet 的定位
+
+Comet 的核心不是“把 MoE 拆成几个阶段”，而是：
+
+> 找到 MoE 中通信和 GEMM 之间共享的 tensor，分析 consumer 在哪个维度上可以独立消费，再按这个维度切分并重排 GroupGEMM tile 顺序，最后用 adaptive thread block assignment 让通信和计算更稳定地重叠。
+
+它比 MiniMax-01 更细，因为它已经进入 GEMM tile / thread block 级别；但它还没有像 FlashMoE 那样把整个 MoE operator 改造成一个 persistent GPU runtime。Comet 更像是在现有 MoE/GEMM 执行栈上，通过 dependency resolving 和 fused kernel scheduling，把 coarse EP overlap 推到 tile-level overlap。
 
 ------
 
