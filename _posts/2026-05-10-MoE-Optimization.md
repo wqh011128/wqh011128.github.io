@@ -596,9 +596,30 @@ Comet 的核心不是“把 MoE 拆成几个阶段”，而是：
 
 ## **4. FlashMoE：persistent kernel + GPU-resident scheduling**
 
-FlashMoE 的目标更激进：把 distributed MoE operator 尽量放进一个 persistent kernel 里执行。
+如果说 Comet 是“把 MoE 中通信和 GEMM 之间的 shared tensor 拆到 tile 级，并重排 producer-consumer 顺序”，那 FlashMoE 再往前走了一步：
 
-传统 MoE 通常会触发一串 kernel 和 collective：
+> 只优化某两段 pipeline 还不够。只要 MoE 仍然依赖 host-managed scheduling、bulk-synchronous collectives 和大量短 kernel launch，就仍然会有系统级 idle gap。FlashMoE 想把整个 distributed MoE operator 放进一个 GPU-resident persistent kernel 里。
+
+这篇文章适合在读完 Comet 后继续看，因为它们都在讲 fine-grained overlap，但抽象层级不同：
+
+```text
+Comet:
+  找 shared tensor -> 按 consumer 依赖切分 -> 重排 GEMM tile -> 专门 thread blocks 做通信/计算
+
+FlashMoE:
+  把 MoE operator 变成 GPU 常驻 runtime
+  用 actor、task、symmetric tensor layout 管理 dispatch / expert compute / combine
+```
+
+### 4.1 从 Comet 视角看 FlashMoE 的动机
+
+FlashMoE 论文的 Introduction 和 Motivation 里强调三个传统 MoE 系统问题。
+
+![FlashMoE overview](https://flash-moe.github.io/static/images/intro-fig.png)
+
+第一是 **synchronous communication**。传统 MoE 常用 `AllToAll` / `AllGather`。这些 collective 是 bulk-synchronous 的：参与通信的 GPU 都要进入同一个集体操作，慢的 GPU 会拖住快的 GPU。MoE router 又是动态的，每个 step 分到各 expert 的 token 数不同，所以 straggler 很常见。
+
+第二是 **kernel launch overhead**。一个 MoE forward 可能包含：
 
 ```text
 router kernel
@@ -609,44 +630,305 @@ expert GEMM kernel
 combine communication kernel
 ```
 
-这会带来两个问题：
+如果每个阶段都要 host 端发起 kernel，并在 kernel 之间交接，短 kernel 和同步点会堆出很明显的 CUDA API / launch gap。FlashMoE 论文里强调，它的目标是一个 persistent kernel，而不是一串短命 kernel。
 
-- kernel launch 多，CPU 调度和 GPU 同步开销大。
-- All-to-All 是 bulk-synchronous collective，容易被慢设备或负载不均拖住。
+第三是 **task locality 没有被充分利用**。Comet 已经告诉我们：数据到达和 GEMM tile ready 是更细的粒度。但如果调度仍然由 CPU 或粗粒度 collective 管，GPU 很难做到“这个 tile ready 了就马上安排一个 block 去算/传”。
 
-FlashMoE 的思路是：让 GPU 内部长期驻留一个 kernel，由它自己调度通信和计算任务。
+所以 FlashMoE 的目标不是再提出一种新的 router，也不是改变 MoE 数学，而是把 MoE 的执行形态从：
 
-### 4.1 Actor model
+```text
+host launches many kernels + collective barriers
+```
 
-FlashMoE 把执行角色抽象成类似 actor 的组件：
+变成：
+
+```text
+one persistent GPU kernel + device-side tasks + one-sided communication
+```
+
+### 4.2 MoE 数学没有变：变的是执行系统
+
+FlashMoE 仍然处理普通的 MoE FFN。对每个 token $x_i$，gate 选择 top-k experts，并给出 combine weights。一个简化的 MoE 输出可以写成：
+
+$$
+y_i = \sum_{j=1}^{k} w_{i,e_j} \cdot E_{e_j}(x_i)
+$$
+
+其中 $E_{e_j}$ 是第 $j$ 个被选中的 expert，$w_{i,e_j}$ 是 gate 给出的权重。
+
+每个 expert 本身还是普通 FFN：
+
+$$
+E_e(x)=W_{e,2}\,\sigma(W_{e,1}x+b_{e,1})+b_{e,2}
+$$
+
+所以要记住：
+
+> FlashMoE 改的是 MoE operator 的 runtime，不是 MoE 的函数形式。
+
+这和 Comet 一样：Comet 的 shared tensor decomposition 也不改变数学结果，只改变数据到达、GEMM tile 和 consumer operator 的执行顺序。
+
+### 4.3 FlashMoE 的核心架构：single persistent kernel
+
+项目页里的架构图很适合作为第一张地图。
+
+![FlashMoE architecture](https://flash-moe.github.io/static/images/architecture.jpg)
+
+FlashMoE 的 persistent kernel 在每张 GPU 上长期运行。它内部不是所有 thread blocks 都做同一件事，而是用 actor model 把 blocks / warps 分成几类角色：
 
 | 角色 | 作用 |
 |---|---|
-| Subscriber | 接收来自其他 GPU 的 tile/task message |
-| Scheduler | 根据 ready 状态决定下一步执行什么 |
-| Processor | 执行 GEMM、elementwise、combine、tile communication |
+| Processor | 执行真正的计算和通信任务，例如 GEMM、element-wise、combine、tile transfer |
+| Subscriber | 接收 peer GPU 发来的 tile packets，并解码成 task descriptors |
+| Scheduler | 维护 ready queue，把已经 ready 的 task 分配给 Processor |
 
-这样一来，MoE 不再只是 CPU 发起一串 kernel，而是 GPU kernel 内部自己做调度。
+论文实现里，大部分 thread blocks 是 Processor。最后一个 block 被当作类似 “OS block” 的管理块，其中三条 warps 做 Subscriber，一条 warp 做 Scheduler。这个细节不太显眼，但很重要：FlashMoE 并不是让所有 blocks 都参与调度，而是用很少的 GPU 资源做管理，把大部分 SM 留给计算任务。
 
-### 4.2 One-sided communication
+这和 Comet 的 thread block specialization 有继承关系：
 
-FlashMoE 强调 one-sided、device-initiated communication。直觉上，它不是等 CPU 或 collective runtime 统一安排通信，而是 GPU kernel 内部的线程主动读写远端 buffer。
+```text
+Comet:
+  compute blocks + communication blocks
 
-这能减少 collective barrier，让通信更接近 fine-grained message passing。
+FlashMoE:
+  Processor blocks + Subscriber/Scheduler management warps
+```
 
-### 4.3 Symmetric layout 和 temporal buffering
+Comet 的重点是隔离 remote I/O 和 GEMM；FlashMoE 的重点是进一步把 task 的产生、通知、调度、执行都放进 GPU kernel 内部。
 
-如果多个 GPU 同时读写远端 buffer，会出现并发冲突。FlashMoE 通过 symmetric tensor layout 和 temporal buffering 管理这些读写位置，让不同 tile 的数据可以安全地在不同时间段进入 buffer。
+### 4.4 Task abstraction：tile 是 runtime 的基本工作单元
 
-另外，它还使用 in-place padding，避免把 padding token 当成真实 token 通过网络传输。
+Comet 里我们已经反复说过，tile 不是 token chunk，而是 GEMM / tensor 的静态分块。FlashMoE 沿用这个视角，但把 tile 进一步封装成 runtime task。
 
-### 4.4 FlashMoE 的定位
+论文把 task descriptor 理解成一组 metadata + operator。一个 task 至少要告诉 Processor：
+
+```text
+我要处理哪块 tile
+这个 tile 属于哪个 expert / 哪张 GPU / 哪个通信阶段
+要执行的是 FFN、combine，还是 tile transfer
+输入地址和输出地址在哪里
+依赖是否已经 ready
+```
+
+用一个很简化的伪代码表达：
+
+```python
+while persistent_kernel_is_running:
+    task = scheduler.pop_ready_task()
+
+    if task.type == "dispatch_tile":
+        processor.transfer_tile(task)
+
+    elif task.type == "ffn_tile":
+        processor.gemm_and_activation(task)
+
+    elif task.type == "combine_tile":
+        processor.weighted_accumulate_and_writeback(task)
+```
+
+这里的关键不是伪代码本身，而是 **ready task** 这个概念。传统 MoE 是阶段式：
+
+```text
+所有 dispatch 完成 -> 所有 expert GEMM 开始 -> 所有 combine 开始
+```
+
+FlashMoE 是任务式：
+
+```text
+某个 dispatch tile 到了 -> 生成 FFN task
+某个 FFN output tile 完成 -> 生成 combine task
+某个 remote packet 到了 -> Subscriber 解码成 task
+```
+
+这就把 Comet 的“tile ready 就尽早消费”推广成一个 GPU 内部的任务系统。
+
+### 4.5 Tile dimensions：为什么不是越大越好
+
+FlashMoE 论文里有一个很值得记的工程细节：它选择的 tile size 是 $(128,64)$。
+
+这和我们讨论 Comet 时常说的 $128\times128$ 不矛盾。不同 kernel、不同 operator、不同寄存器压力下，最优 tile shape 会变。FlashMoE 给出的直觉是：
+
+- tile 太小：每个 task 的计算量太少，GPU 利用率低，调度开销相对变大。
+- tile width 太大：每个线程需要保存更多寄存器，容易 register spill 到 local memory。
+- tile height 太大：单线程工作量变重，可能降低并行度。
+- thread block 太大：同时驻留的 blocks 变少，SM occupancy 下降，`__syncthreads()` 等 block 内同步成本也更高。
+
+所以 tile size 不是“expert 能处理的最大 token 数”，而是 kernel/hardware co-design 的结果。这个点和 Comet 的 granularity mismatch 可以接上：tile 是 GPU 计算和调度的单位，不是 MoE 逻辑层的 token chunk。
+
+### 4.6 One-sided communication：UVA、NVSHMEM 和 device-initiated DMA
+
+FlashMoE 和 Comet 都想摆脱纯 collective 的粗粒度等待，但 FlashMoE 更强调 **one-sided, device-initiated communication**。
+
+传统 `AllToAll` 是：
+
+```text
+所有 GPU 进入 collective
+runtime 统一搬数据
+所有参与方等待完成
+```
+
+FlashMoE 使用 NVSHMEM 建立跨 GPU 的 global address space，并在可用时利用 UVA 做 DMA / RDMA 风格的数据搬运。直觉上，GPU kernel 里的 Processor 或 communication task 可以直接把某个 tile 写到目标 GPU 的某个地址，而不是等 host 发起一个大 collective。
+
+但这里有两个容易误解的点。
+
+第一，one-sided 不等于没有通信成本。远端读写仍然有延迟和带宽限制，只是它不再要求所有 GPU 同步进入同一个 collective。
+
+第二，one-sided 需要非常小心的内存布局。如果两个 GPU 同时往目标 GPU 的同一块 buffer 写，就会发生 write-write conflict。FlashMoE 的 symmetric tensor layout 就是为了解决这个问题。
+
+### 4.7 Symmetric Tensor Layout：为什么需要多出来的 temporal buffers
+
+FlashMoE 的 Figure 7 讲的是 symmetric tensor layout。它是全篇一个不太容易一眼看懂、但非常关键的设计。
+
+论文里可以把这个 layout 粗略读成：
+
+$$
+L \sim [P, r, 2, s, n, C_{\mathrm{up}}, h]
+$$
+
+这里不是逐字符复刻论文公式，而是帮助理解每个维度的含义：
+
+| 符号 | 含义 |
+|---|---|
+| $P$ | expert-parallel world size |
+| $r$ | communication rounds，例如 dispatch 和 combine |
+| $2$ | 每个 communication round 有 outgoing / incoming 两个方向 |
+| $s$ | staging buffers 数量 |
+| $n$ | 每张 GPU 上 local experts 数 |
+| $C_{\mathrm{up}}$ | upscaled expert capacity |
+| $h$ | token hidden dimension |
+
+为什么要这么复杂？因为 FlashMoE 要支持 fully non-blocking one-sided writes。不同 GPU 的 task 会同时向 symmetric layout 中写 tile。如果只用一个普通 buffer，就很难避免冲突；要么加锁，要么同步，要么冒险覆盖。
+
+FlashMoE 的思路是加 temporal dimensions：
+
+```text
+不同通信轮次用不同 slots
+outgoing 和 incoming 分开
+不同 staging buffer 分开
+不同 peer/local expert/capacity slot 分开
+```
+
+这样一个 remote write 的目标地址由 source GPU、target GPU、round、direction、expert slot、capacity slot 等 metadata 唯一决定。论文还给了 theorem：这个布局是 write-write conflict-free。
+
+这个设计和 Comet 的 shared tensor 思路有微妙区别：
+
+```text
+Comet shared tensor:
+  关注 producer 和 consumer 怎么共享一块中间 tensor，并按依赖切分。
+
+FlashMoE symmetric tensor:
+  关注跨 GPU one-sided writes 怎样在不加同步的情况下安全落位。
+```
+
+换句话说，Comet 主要解决“什么时候可以算”；FlashMoE 还要解决“数据可以安全写到哪里”。
+
+### 4.8 In-place padding：为什么 padding 也会浪费通信
+
+MoE 里常见一个 capacity 概念：每个 expert 最多接收多少 token。为了让 buffer shape 固定，很多实现会把 expert input padding 到 capacity。
+
+例如某个 expert capacity 是 128，但这次只收到 37 个真实 token。传统实现可能会构造一个 128 行的 buffer：
+
+```text
+37 real tokens + 91 null tokens
+```
+
+如果这些 null tokens 也被跨 GPU 传输，就浪费网络带宽。FlashMoE 的 payload efficiency 指的就是避免发送这种无意义 payload。
+
+FlashMoE 的 in-place padding 思路是：
+
+```text
+只把真实 token 通过网络发送过去
+padding 在本地 symmetric tensor buffer 里完成
+```
+
+这样既满足后续 Processor 按固定 tile shape / aligned capacity 读取的需求，又避免把 null token 当作真实数据走网络。
+
+这个点有点“不显眼但很实用”：MoE 的动态路由会导致每个 expert 的真实 token 数远小于或不等于 capacity，如果系统总是按 capacity 传输，那么稀疏计算节省下来的部分收益会被无效通信吃掉。
+
+### 4.9 FlashMoE 的执行流程：从一个 token tile 的视角看
+
+可以用一个 tile 的生命周期来理解 FlashMoE。
+
+```text
+1. Gate / routing 产生 token -> expert 的映射。
+
+2. 对某个目标 expert，Processor 生成 dispatch tile task。
+
+3. 如果 expert 在远端 GPU：
+   Processor 通过 NVSHMEM / UVA 把 tile 写入目标 GPU 的 symmetric tensor slot。
+   同时发送 signal，通知目标 GPU 有 tile 到达。
+
+4. 目标 GPU 的 Subscriber 收到 packet / signal，
+   解码成 task descriptor。
+
+5. Scheduler 把 ready task 分给空闲 Processor。
+
+6. Processor 执行 expert FFN tile：
+   Linear-1 -> activation -> Linear-2。
+
+7. 输出 tile ready 后，生成 combine task。
+
+8. combine task 根据 routing weight 做 weighted accumulation，
+   如果原 token 在远端，再通过 one-sided write 写回。
+```
+
+这条链路的核心是：每个 tile 的 arrival、compute、combine 都可以独立推进，而不是被整个 MoE layer 的阶段边界卡住。
+
+### 4.10 和 Comet 的关系：不是替代，而是更底层的 runtime 化
+
+如果只读过 Comet，很容易把 FlashMoE 理解成“另一个更激进的 Comet”。这个说法有一半对，一半不够准确。
+
+相同点：
+
+- 都认为 MoE 的瓶颈来自通信和计算的粒度不匹配。
+- 都把粒度降到 tile/task 级别。
+- 都不满足于传统 EP overlap 的 token chunk 级 pipeline。
+- 都需要把通信和 GEMM 资源隔离开，避免 remote I/O 破坏计算。
+
+不同点：
+
+| 维度 | Comet | FlashMoE |
+|---|---|---|
+| 核心抽象 | shared tensor dependency resolving | GPU-resident actor/task runtime |
+| 主要对象 | 两条 producer-consumer pipeline | 整个 distributed MoE operator |
+| 通信方式 | 更细粒度 P2P / kernel 协调 | one-sided device-initiated DMA/RDMA |
+| 调度位置 | fused kernel 内的 block assignment | persistent kernel 内 Scheduler 分配 tasks |
+| 内存布局重点 | shared tensor 的切分方向和执行顺序 | symmetric tensor layout 保证 non-blocking writes |
+| 解决的额外问题 | granularity mismatch | kernel launch、collective barrier、payload inefficiency |
+
+所以我会这样理解：
+
+```text
+Comet:
+  把 MoE 的通信-计算 overlap 做到 tile-aware。
+
+FlashMoE:
+  把 MoE 的执行环境改成 tile-task runtime。
+```
+
+### 4.11 读 FlashMoE 时值得记录的“不太显眼”的细节
+
+**第一，single kernel 不等于把所有代码机械粘在一个 kernel 里。** 真正关键是 persistent kernel 内部有 task abstraction、actor role 和 ready queue。否则只是把阶段写进一个大 kernel，仍然可能内部空转。
+
+**第二，Subscriber / Scheduler 是成本，不是免费午餐。** FlashMoE 特意只用最后一个 block 做 OS block，就是为了把管理成本压低。调度能力太弱会供不上 tasks；调度资源太多又会抢走计算 blocks。
+
+**第三，tile size 是硬件约束下的折中。** 论文选择 $(128,64)$，背后是 register pressure、shared memory、SM occupancy、block synchronization 的平衡，不是理论上越大越好。
+
+**第四，symmetric tensor layout 是正确性设计，不只是性能优化。** 如果没有这个布局，one-sided writes 可能需要同步或锁；一旦同步变多，FlashMoE 的核心优势就会被抵消。
+
+**第五，payload efficiency 是 MoE 特有问题。** 因为 router 动态分配 token，capacity padding 很常见。FlashMoE 的 in-place padding 让网络只传真实 token，不传 null token。
+
+**第六，实验结果要看清边界。** 论文的 evaluation 主要测单个 MoE layer forward，硬件是 8 张 H100；FlashMoE 用 FP32，而很多 baseline 用 FP16，论文认为这反而让 FlashMoE 更吃亏。但这也意味着，读结果时要把精度、forward-only、单层 MoE operator 和完整训练系统区分开。
+
+### 4.12 FlashMoE 的定位
 
 FlashMoE 可以理解成：
 
-> 把 MoE 层看成一堆 tile-level tasks，然后在一个 persistent GPU kernel 里做通信、计算和调度。
+> 把 distributed MoE layer 从“host 发起的一串 kernels + collectives”改造成“GPU 内部常驻的 tile-task runtime”。
 
-它比 Comet 更系统级、更激进。Comet 仍然围绕 shared tensor decomposition 和 kernel scheduling 展开；FlashMoE 则试图把 MoE 的执行模型整体改成 GPU-resident task runtime。
+它比 Comet 更系统级、更激进。Comet 解决的是 shared tensor 的依赖切分和 tile 重排；FlashMoE 解决的是整个 MoE operator 如何在 GPU 内部自行调度、通信、计算和写回。
+
+这也是为什么 DeepSeek-V4 那种 expert-wave pipeline 读起来会更像工程折中：它吸收了 fine-grained overlap 的思想，但没有把论文重点放在一个完整 persistent MoE runtime 上。而 FlashMoE 的主张更明确：**要突破 MoE 系统瓶颈，不能只看 GEMM，也不能只看通信，必须把 kernel launch、调度、远程写、内存布局和 padding 一起设计。**
 
 ------
 
