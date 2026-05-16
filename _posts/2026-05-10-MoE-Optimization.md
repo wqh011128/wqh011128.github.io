@@ -1149,7 +1149,7 @@ Dispatch All-to-All
 -> Combine All-to-All
 ```
 
-这里的 `Linear-1` 和 `Linear-2` 是 expert FFN 的两个自然 GEMM，不是额外加出来的新层。
+这里的 `Linear-1` 和 `Linear-2` 是 expert FFN 的两个自然 GEMM。
 
 如果 expert 是 SwiGLU 结构，那么 `Linear-1` 可以理解成同时做 gate/up 两个 projection：
 
@@ -1315,49 +1315,11 @@ FlashMoE
 
 ------
 
-## **7. MiniMax 和 DeepSeek 的“五段”为什么不是一回事**
-
-这是最容易混淆的点。
-
-MiniMax-01 在 ETP 场景下的流程是：
-
-```text
-a2a-dispatch -> allgather -> expert compute -> reduce-scatter -> a2a-combine
-```
-
-这里的 `allgather` 和 `reduce-scatter` 是 tensor parallelism 引入的通信操作。
-
-DeepSeek-V4 Figure 5 的流程是：
-
-```text
-dispatch -> Linear-1 -> activation -> Linear-2 -> combine
-```
-
-这里的 `Linear-1` 和 `Linear-2` 是 expert FFN 内部的两个 GEMM。
-
-所以二者的“五段”不是同一种拆分：
-
-- MiniMax 拆的是 **并行通信路径**。
-- DeepSeek 拆的是 **expert FFN 执行路径**。
-- Comet 拆的是 **通信和 GEMM 之间的 shared tensor**。
-- FlashMoE 拆的是 **整个 MoE operator 的 tile tasks**。
-
-如果用一句话区分：
-
-```text
-MiniMax 关心怎么组织并行组；
-Comet 关心怎么重排共享张量；
-FlashMoE 关心怎么把 MoE 变成 GPU 常驻任务系统；
-DeepSeek 关心怎么把 experts 分 wave 后流水执行。
-```
-
-------
-
-## **8. 一个统一的理解框架**
+## **7. 一个统一的理解框架**
 
 MoE 优化可以按三层看。
 
-### 8.1 并行策略层
+### 7.1 并行策略层
 
 这一层决定 expert 放在哪些 GPU 上，token 怎么发过去。
 
@@ -1370,7 +1332,7 @@ MoE 优化可以按三层看。
 
 MiniMax-01 主要在这一层。
 
-### 8.2 Kernel / GEMM 调度层
+### 7.2 Kernel / GEMM 调度层
 
 这一层决定矩阵乘和通信怎么交错。
 
@@ -1383,7 +1345,7 @@ MiniMax-01 主要在这一层。
 
 Comet 和 DeepSeek-V4 主要在这一层，只是切分对象不同。
 
-### 8.3 Runtime 层
+### 7.3 Runtime 层
 
 这一层决定整个 MoE operator 是否还依赖外部 collective 和一串 kernel launch。
 
@@ -1398,25 +1360,4 @@ FlashMoE 主要在这一层。
 
 ------
 
-## **9. 总结**
 
-MoE 优化不是一个单点技巧，而是一组围绕“通信、计算、调度”展开的系统工程。
-
-MiniMax-01 说明，当模型达到 456B 参数、长上下文训练又引入复杂并行时，MoE 的关键是把 EP、ETP、EDP 组织好，并通过 token group 让通信和计算重叠。
-
-Comet 说明，MoE 的低效来自通信和 GEMM 粒度不一致。只要把 shared tensor 拆开，并重新安排 tile 的消费顺序，就能减少等待。
-
-FlashMoE 说明，传统 collective 和多 kernel launch 本身就是瓶颈。把 MoE 做成 persistent kernel，并让 GPU 自己调度通信和计算，可以进一步压低系统开销。
-
-DeepSeek-V4 则说明，在真实超大规模 MoE 模型里，expert-wave pipeline 是一种实用折中：它不必重写整个 runtime，但能把 dispatch、expert GEMM 和 combine 更细地流水起来。
-
-所以我现在会这样记：
-
-```text
-MiniMax-01: group-level overlap
-Comet: tile-level dependency-aware overlap
-FlashMoE: persistent-kernel task scheduling
-DeepSeek-V4: expert-wave pipeline
-```
-
-这四篇放在一起看，真正讲的是同一个问题的不同层级：**MoE 让参数变稀疏，但通信让系统变复杂；优化的本质，是让每一块数据到达后尽快被计算，每一块结果产生后尽快被发送。**
