@@ -14,6 +14,7 @@ categories:
 - Comet: [arXiv](https://arxiv.org/abs/2502.19811)
 - FlashMoE: [Project Page](https://flash-moe.github.io/) / [arXiv](https://arxiv.org/abs/2506.04667)
 - DeepSeek-V4: [Technical Report](https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro/resolve/main/DeepSeek_V4.pdf)
+- DeepSeek MegaMoE2: [DeepGEMM PR #304](https://github.com/deepseek-ai/DeepGEMM/pull/304) / [Benchmark PR #316](https://github.com/deepseek-ai/DeepGEMM/pull/316)
 
 [toc]
 
@@ -1136,7 +1137,7 @@ FlashMoE 可以理解成：
 
 DeepSeek-V4 的 MoE 优化小节叫 **Fine-Grained Communication-Computation Overlap in Expert Parallelism**。它借鉴了前面这些工作，但落点更工程化：围绕 DeepSeek-V4 自己的 expert parallelism，把 MoE 层拆成可以流水的 expert waves。
 
-### 5.1 DeepSeek 的五段流程
+### 5.1 DeepSeek 的五段流程：不是 MiniMax 那个“五段”
 
 DeepSeek-V4 把 MoE 层执行写成：
 
@@ -1149,6 +1150,19 @@ Dispatch All-to-All
 ```
 
 这里的 `Linear-1` 和 `Linear-2` 是 expert FFN 的两个自然 GEMM，不是额外加出来的新层。
+
+如果 expert 是 SwiGLU 结构，那么 `Linear-1` 可以理解成同时做 gate/up 两个 projection：
+
+$$
+\begin{aligned}
+g_e &= X_e W_{e,\mathrm{gate}} \\
+u_e &= X_e W_{e,\mathrm{up}} \\
+z_e &= \mathrm{SiLU}(g_e)\odot u_e \\
+Y_e &= z_e W_{e,\mathrm{down}}
+\end{aligned}
+$$
+
+所以 DeepSeek-V4 Figure 5 里的 `Linear-1` 对应前两行，`SwiGLU / FP8 Cast` 对应第三行和量化转换，`Linear-2` 对应最后一行。它拆的是 **expert FFN 执行路径**，不是 MiniMax-01 里 `a2a -> allgather -> compute -> reduce-scatter -> a2a` 那种并行通信路径。
 
 ### 5.2 什么是 wave
 
@@ -1170,6 +1184,10 @@ t3: combine  wave 1 | compute wave 2 | dispatch wave 3
 ```
 
 也就是说，DeepSeek-V4 的切分粒度是 **expert wave**。它既不是 MiniMax-01 的 token group，也不是 Comet 的 shared tensor tile，也不是 FlashMoE 的完整 persistent task runtime。
+
+这里有一个很容易混淆的点：wave 的切分对象更接近 **local experts**，而不是 token 序列本身。router 会让不同 experts 收到不同数量的 tokens；某个 wave 只要它包含的 local experts 已经拿到足够的输入，就可以开始执行对应 expert GEMM。没有必要等本 rank 上所有 experts 都完成 dispatch。
+
+因此它想解决的是 MoE 里典型的 long-tail 问题：某些 experts 的 token 较多或通信到达更慢，如果整层同步等待，其他已经 ready 的 experts 会空转；如果按 wave 推进，ready 的部分先算，没 ready 的部分继续通信。
 
 ### 5.3 为什么它能隐藏通信
 
@@ -1194,7 +1212,66 @@ $$
 
 当 $d=3072$ 时，就是约 $6144$ FLOPs/Byte。这说明在合适硬件条件下，MoE expert 计算可以覆盖很大一部分通信。
 
-### 5.4 DeepSeek 的定位
+更具体地说，DeepSeek-V4-Pro 的一个 token-expert pair 需要大约 $6hd$ FLOPs：gate projection、up projection、down projection 各贡献一部分。通信量大约是 $3h$ bytes：dispatch 输入和 combine 输出不完全同精度，论文按 FP8 dispatch 与 BF16 combine 做估算。这个比例说明：只要系统能把通信切细并和 GEMM 对齐，通信就有机会被 Tensor Core 计算遮住。
+
+### 5.4 公开代码：MegaMoE2 对应什么
+
+论文说已经公开 CUDA-based mega-kernel **MegaMoE2**，对应 DeepGEMM PR #304。PR 描述里明确写到：它把 `Dispatch -> Linear-1 -> SwiGLU -> Linear-2 -> Combine` 融合进一个 mega-kernel，并重叠 NVLink communication 与 Tensor Core computation。
+
+这个公开代码给我们几个很重要的判断依据。
+
+第一，DeepSeek 这里不是只写了一个普通 PyTorch MoE。Hugging Face model repo 里的 `inference/model.py` 更像结构可读版本；真正的 MoE runtime 优化在 DeepGEMM 的 MegaMoE2 kernel 里。
+
+第二，MegaMoE2 的 Python 测试把 fused path 和 legacy baseline 放在一起。legacy baseline 的逻辑可以概括成：
+
+```python
+recv_x = dispatch(x, topk_idx, topk_weights)
+l1_y = grouped_gemm(recv_x, l1_weights)
+l1_y = swiglu_and_cast(l1_y, topk_weights)
+l2_y = grouped_gemm(l1_y, l2_weights)
+y = combine(l2_y)
+```
+
+而 fused path 变成：
+
+```python
+buffer = get_symmetric_buffer(...)
+w1, w2 = transform_weights_for_mega_moe(...)
+fp8_fp4_mega_moe(
+    output,
+    w1,
+    w2,
+    buffer,
+    cumulative_local_expert_recv_stats=...,
+)
+```
+
+这不是逐行引用源码，而是把公开测试里的结构抽象出来。重点是：MegaMoE2 不再让 host/runtime 一段一段驱动 dispatch、GEMM、activation、GEMM、combine，而是把这些阶段放进一个 fused kernel/runtime 里调度。
+
+第三，Python API 层没有暴露 `num_waves` 这种模型超参数。wave 更像 kernel 内部的调度粒度：kernel 根据 `topk_idx`、`topk_weights`、local expert receive statistics、symmetric buffer 和变换后的 expert weights，决定哪些 experts 已经 ready，哪些结果可以 combine。
+
+### 5.5 结合 PR #316 看配置和收益
+
+DeepGEMM Benchmark PR #316 给了和 DeepSeek-V4 对齐的测试配置：
+
+| 模型 | Experts | Top-k | Hidden size $h$ | Intermediate size $d$ | EP |
+|---|---:|---:|---:|---:|---:|
+| DeepSeek-V4-Flash | 256 | 6 | 4096 | 2048 | 8 |
+| DeepSeek-V4-Pro | 384 | 6 | 7168 | 3072 | 8 |
+
+这里的 `top-k=6` 表示每个 token 会路由到 6 个 experts；EP8 表示 experts 分布在 8 个 expert-parallel ranks 上。benchmark 里 MegaMoE2 相对 legacy baseline 的加速大致在 1.50x 到 1.96x 之间，小 batch / latency-sensitive 场景收益尤其明显。
+
+这也解释了为什么 DeepSeek-V4 论文特别提到 RL rollout 和 high-speed agent serving：这些场景 batch 未必很大，但 latency 很敏感；如果整层 MoE 等待所有 experts 同步，通信 bubble 会更明显。按 wave 推进之后，局部 ready 的 experts 可以先算，上一批结果可以先回传，pipeline 更容易保持饱和。
+
+### 5.6 论文里几个容易漏掉的系统细节
+
+**第一，dispatch 是 pull-based。** DeepSeek-V4 论文说 dispatch 阶段由每个 GPU 主动从远端 GPU 读取 activations，而不是让远端 GPU 细粒度 push 过来。原因是 fine-grained push 需要大量低延迟通知，当前硬件上 signaling overhead 很难忽略；pull-based 让当前 GPU 根据本地需要发起读取，更容易和本地 wave 调度配合。
+
+**第二，带宽不是唯一瓶颈。** 论文用 $\frac{C}{B}\leq \frac{V_{\mathrm{comp}}}{V_{\mathrm{comm}}}$ 说明只要计算通信比足够高，通信可以被计算遮住。此时继续只提高互联带宽不一定最优，反而要关注 compute、HBM、NVLink 和 power budget 是否能同时撑住。
+
+**第三，SwiGLU / cast 也在流水线上。** Figure 5 不是只画了两次 GEMM，中间还有 `SwiGLU / FP8 Cast`。如果这个 element-wise 阶段太慢，Linear-1 和 Linear-2 之间也会产生 bubble。论文因此提到，未来更低成本的 activation 可能有利于这种 fine-grained overlap。
+
+### 5.7 DeepSeek 的定位
 
 DeepSeek-V4 不是在论文里提出一个通用 MoE runtime 系统，而是在自己的大模型系统里落地了一个适合 large-scale EP 的 expert-wave pipeline。
 
