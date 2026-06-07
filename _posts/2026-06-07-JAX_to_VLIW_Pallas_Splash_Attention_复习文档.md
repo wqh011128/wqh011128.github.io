@@ -6,7 +6,6 @@ categories:
   - blog
 ---
 
-
 # JAX 到 VLIW，以及 Pallas / Splash Attention 复习笔记
 
 本文整理两篇 Patrick Toulme 的文章：
@@ -942,68 +941,262 @@ output 是沿 KV 维度 weighted sum，因此不同 KV tile 对 output 的贡献
 
 ## 15. Online softmax：为什么需要 m、l、o
 
-普通 softmax：
+先只看一个 query。它要 attend 到很多 key/value：
 
 ```text
-p_j = exp(s_j - max_all) / sum_k exp(s_k - max_all)
+key/value 位置：1, 2, 3, ..., N
+score：a_1, a_2, a_3, ..., a_N
+value：v_1, v_2, v_3, ..., v_N
 ```
 
-稳定 softmax 要用全局最大值 `max_all`。这看起来要求我们先看到所有 scores。
+标准 attention 输出是：
 
-Online softmax 的技巧是：不 materialize 全部 scores，而是逐个 KV tile 处理，同时维护三个状态：
+$$
+\mathrm{Out}
+=
+\sum_{t=1}^{N}
+\frac{e^{a_t}}{\sum_{r=1}^{N} e^{a_r}}
+v_t
+$$
 
-```text
-m: running max
-l: running denominator
-o: running unnormalized output numerator
-```
+为了数值稳定，通常减去最大值：
 
-假设当前处理一个新的 block：
+$$
+M = \max_{1 \le t \le N} a_t
+$$
 
-```text
-scores_b = Q_block @ K_block^T
-m_b = max(scores_b, axis=-1)
-m_new = max(m_old, m_b)
-```
+于是：
 
-如果新 block 出现更大的 max，旧累计值需要重缩放：
+$$
+\mathrm{Out}
+=
+\frac{
+\sum_{t=1}^{N} e^{a_t - M} v_t
+}{
+\sum_{t=1}^{N} e^{a_t - M}
+}
+$$
 
-```text
-alpha = exp(m_old - m_new)
-```
+这里可以拆出两个量：
 
-当前 block 的未归一化概率：
+$$
+O = \sum_{t=1}^{N} e^{a_t - M} v_t
+$$
 
-```text
-p_b = exp(scores_b - m_new)
-```
-
-更新 denominator：
-
-```text
-l_new = alpha * l_old + sum(p_b)
-```
-
-更新输出 numerator：
-
-```text
-o_new = alpha * o_old + p_b @ V_block
-```
+$$
+L = \sum_{t=1}^{N} e^{a_t - M}
+$$
 
 最后：
 
+$$
+\mathrm{Out} = \frac{O}{L}
+$$
+
+所以：
+
 ```text
+L = softmax denominator，分母，也可以理解成总权重
+O = softmax @ V 的 numerator，分子，也就是未归一化的加权 V 总和
+```
+
+注意 shape：
+
+```text
+L:
+  对每个 query 是一个标量。
+  对一个 Q block 是 [bq] 或 [bq, 1]。
+
+O:
+  对每个 query 是一个 head_dim 向量。
+  对一个 Q block 是 [bq, head_dim]。
+```
+
+### 15.1 分块之后，local_sum 和 local_out 是什么
+
+现在把 KV 分成两个 block：
+
+```text
+block A: 位置 1,2,3
+block B: 位置 4,5,6
+```
+
+如果已经处理完 block A，我们维护：
+
+$$
+m_A = \max(a_1,a_2,a_3)
+$$
+
+$$
+L_A =
+e^{a_1-m_A} +
+e^{a_2-m_A} +
+e^{a_3-m_A}
+$$
+
+$$
+O_A =
+e^{a_1-m_A}v_1 +
+e^{a_2-m_A}v_2 +
+e^{a_3-m_A}v_3
+$$
+
+这里：
+
+```text
+m_A = 已处理 blocks 的最大 score
+L_A = 已处理 blocks 的分母累计
+O_A = 已处理 blocks 的加权 V 分子累计
+```
+
+现在来了 block B：
+
+$$
+m_B = \max(a_4,a_5,a_6)
+$$
+
+新的全局最大值是：
+
+$$
+m_{AB} = \max(m_A, m_B)
+$$
+
+block B 自己的贡献必须用新的最大值 \(m_{AB}\) 来算：
+
+$$
+L_B =
+e^{a_4-m_{AB}} +
+e^{a_5-m_{AB}} +
+e^{a_6-m_{AB}}
+$$
+
+$$
+O_B =
+e^{a_4-m_{AB}}v_4 +
+e^{a_5-m_{AB}}v_5 +
+e^{a_6-m_{AB}}v_6
+$$
+
+这两个就是代码里的：
+
+```text
+local_sum = L_B
+local_out = O_B
+```
+
+也就是：
+
+```text
+local_sum:
+  当前 KV block 对 softmax 分母的贡献。
+
+local_out:
+  当前 KV block 对 attention 输出分子的贡献。
+```
+
+对应到 tile 写法：
+
+```text
+scores_block = Q_block @ K_block^T
+p_block = exp(scores_block - m_new)
+
+local_sum = reduce_sum(p_block, axis=KV_block_dim)
+local_out = p_block @ V_block
+```
+
+### 15.2 为什么旧的 O/L 要乘 correction
+
+问题是：
+
+```text
+旧的 L_A / O_A 是用旧最大值 m_A 算的。
+现在新的最大值变成了 m_AB。
+```
+
+为了把旧贡献换到新的 max 坐标系，需要缩放：
+
+$$
+\alpha = e^{m_A - m_{AB}}
+$$
+
+于是：
+
+$$
+L_A' = \alpha L_A
+$$
+
+$$
+O_A' = \alpha O_A
+$$
+
+这是因为：
+
+$$
+e^{a_t - m_{AB}}
+=
+e^{a_t - m_A} \cdot e^{m_A - m_{AB}}
+$$
+
+所以旧累计值都要乘同一个缩放因子。
+
+### 15.3 l_new 和 o_new 是什么
+
+合并旧 blocks 与当前 block：
+
+$$
+L_{AB}
+=
+\alpha L_A + L_B
+$$
+
+$$
+O_{AB}
+=
+\alpha O_A + O_B
+$$
+
+这就是代码：
+
+```python
+l_new = correction * l_prev + local_sum
+o_new = correction * o_prev + local_out
+```
+
+变量对照：
+
+```text
+correction = alpha
+l_prev     = L_A
+o_prev     = O_A
+local_sum  = L_B
+local_out  = O_B
+l_new      = L_AB
+o_new      = O_AB
+```
+
+最后扫完所有 KV blocks：
+
+$$
+\mathrm{Out}
+=
+\frac{O_{\mathrm{final}}}{L_{\mathrm{final}}}
+$$
+
+也就是：
+
+```python
 output = o_final / l_final
 ```
 
-这和完整 softmax 完全等价，只是不生成完整 scores 矩阵。
-
-`alpha` 是最关键的直觉：
+一句话：
 
 ```text
-旧的 l_old / o_old 是基于 m_old 这个 max 坐标系算的。
-如果 m_new 更大，就要把旧累计值转换到 m_new 坐标系。
-转换因子就是 exp(m_old - m_new)。
+Attention = 加权 value 之和 / 权重之和
+
+O = 加权 value 之和，也就是分子
+L = 权重之和，也就是分母
+
+online softmax 只是分块处理时，边走边维护 O 和 L。
 ```
 
 ---
